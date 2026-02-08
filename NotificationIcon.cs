@@ -15,7 +15,7 @@ using System.Windows.Forms;
 namespace PingoMeter
 {
     [SupportedOSPlatform("windows")]
-    internal sealed class NotificationIcon
+    internal sealed class NotificationIcon : IDisposable
     {
         const int BALLOON_TIP_TIME_OUT = 3000;
 
@@ -37,6 +37,8 @@ namespace PingoMeter
         SoundPlayer SFXConnectionLost;
         SoundPlayer SFXTimeOut;
         SoundPlayer SFXResumed;
+
+        System.Threading.Timer? pingTimer;
 
         enum PingHealthEnum
         {
@@ -89,23 +91,51 @@ namespace PingoMeter
             SetIcon();
         }
 
-        ~NotificationIcon()
-        {
-            DestroyIcon(hicon);
-            DestroyIcon(hiconOriginal);
-            g.Dispose();
-        }
-
         public void Run()
         {
             notifyIcon.Visible = true;
             
-            // Start the ping timer
-            var timer = new System.Threading.Timer(async _ => await PingAsync(), null, 
+            // Start the ping timer - use Task.Run to properly handle async method
+            pingTimer = new System.Threading.Timer(_ => 
+            {
+                try
+                {
+                    Task.Run(async () => await PingAsync()).Wait();
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle timer exceptions
+                    notifyIcon.Text = $"Timer error: {ex.Message}";
+                }
+            }, null, 
                 TimeSpan.FromMilliseconds(999), 
                 TimeSpan.FromMilliseconds(Config.Delay));
             
             Application.Run();
+        }
+
+        public void Dispose()
+        {
+            pingTimer?.Dispose();
+            
+            if (hicon != IntPtr.Zero)
+                DestroyIcon(hicon);
+            if (hiconOriginal != IntPtr.Zero)
+                DestroyIcon(hiconOriginal);
+            
+            g?.Dispose();
+            font?.Dispose();
+            font100?.Dispose();
+            drawable?.Dispose();
+            originalImage?.Dispose();
+            noneIcon?.Dispose();
+            
+            SFXConnectionLost?.Dispose();
+            SFXTimeOut?.Dispose();
+            SFXResumed?.Dispose();
+            
+            notifyIcon?.Dispose();
+            notificationMenu?.Dispose();
         }
 
         private void SetIcon()
@@ -260,6 +290,12 @@ namespace PingoMeter
         // Ping using async/await pattern
         private async Task PingAsync()
         {
+            if (Config.TheIPAddress == null)
+            {
+                notifyIcon.Text = "Status: No IP address configured";
+                return;
+            }
+
             try
             {
                 using var p = new Ping();
@@ -347,8 +383,7 @@ namespace PingoMeter
                 catch (Exception ex)
                 {
                     DrawGraph(-1L);
-                    notifyIcon.Text = ex.Message;
-                    notifyIcon.Text = "Status: Error.";
+                    notifyIcon.Text = $"Status: Error - {ex.Message}";
 
                     notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Error: " + ex.Message, ToolTipIcon.Error);
                     alarmStatus = AlarmEnum.None;
@@ -356,7 +391,7 @@ namespace PingoMeter
             }
             catch (Exception ex)
             {
-                notifyIcon.Text = "Status: Error.";
+                notifyIcon.Text = $"Status: Error - {ex.Message}";
                 alarmStatus = AlarmEnum.None;
             }
         }

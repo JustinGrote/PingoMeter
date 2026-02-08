@@ -35,12 +35,12 @@ namespace PingoMeter
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                var host = CreateHostBuilder(args).Build();
+                // Use the host for dependency injection but manage lifecycle with Application.Run()
+                using var host = CreateHostBuilder(args).Build();
+                using var scope = host.Services.CreateScope();
+                using var notificationIcon = scope.ServiceProvider.GetRequiredService<NotificationIcon>();
                 
-                var notificationIcon = host.Services.GetRequiredService<NotificationIcon>();
                 notificationIcon.Run();
-                
-                host.Dispose();
             }
             catch (Exception ex)
             {

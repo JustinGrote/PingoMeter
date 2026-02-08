@@ -1,10 +1,13 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace PingoMeter
 {
+    [SupportedOSPlatform("windows")]
     internal static class Config
     {
 
@@ -16,23 +19,23 @@ namespace PingoMeter
         public static int MaxPing;
         public static bool OfflineCounter = true;
 
-        public static Pen BgColor;
-        public static Pen GoodColor;
-        public static Pen NormalColor;
-        public static Pen BadColor;
+        public static Pen? BgColor;
+        public static Pen? GoodColor;
+        public static Pen? NormalColor;
+        public static Pen? BadColor;
 
         public static bool RunOnStartup;
 
-        private static string ipName;
-        private static IPAddress ipAddress;
+        private static string ipName = string.Empty;
+        private static IPAddress? ipAddress;
 
-        public static IPAddress TheIPAddress
+        public static IPAddress? TheIPAddress
         {
             get => ipAddress;
             set
             {
                 ipAddress = value;
-                ipName = value.ToString();
+                ipName = value?.ToString() ?? string.Empty;
             }
         }
 
@@ -44,9 +47,9 @@ namespace PingoMeter
 
         // sound effects path to .wav (or "(none)")
         public const string NONE_SFX = "(none)";
-        public static string SFXConnectionLost;
-        public static string SFXTimeOut;
-        public static string SFXResumed;
+        public static string SFXConnectionLost = NONE_SFX;
+        public static string SFXTimeOut = NONE_SFX;
+        public static string SFXResumed = NONE_SFX;
 
         /// <summary> Use numbers for the ping instead of a graph. </summary>
         public static bool UseNumbers;
@@ -60,43 +63,43 @@ namespace PingoMeter
                                   bool alarmConnectionLost, bool alarmTimeOut, bool alarmResumed, bool useNumbers,
                                   string _SFXConnectionLost, string _SFXTimeOut, string _SFXResumed, bool offlineCounter)
         {
-            Delay               = delay;
-            MaxPing             = maxPing;
-            BgColor             = new Pen(bgColor);
-            GoodColor           = new Pen(goodColor);
-            NormalColor         = new Pen(normalColor);
-            BadColor            = new Pen(badColor);
-            RunOnStartup        = runOnStartup;
-            TheIPAddress        = address;
+            Delay = delay;
+            MaxPing = maxPing;
+            BgColor = new Pen(bgColor);
+            GoodColor = new Pen(goodColor);
+            NormalColor = new Pen(normalColor);
+            BadColor = new Pen(badColor);
+            RunOnStartup = runOnStartup;
+            TheIPAddress = address;
             AlarmConnectionLost = alarmConnectionLost;
-            AlarmTimeOut        = alarmTimeOut;
-            AlarmResumed        = alarmResumed;
-            UseNumbers          = useNumbers;
-            SFXConnectionLost   = _SFXConnectionLost;
-            SFXTimeOut          = _SFXTimeOut;
-            SFXResumed          = _SFXResumed;
-            OfflineCounter      = offlineCounter;
+            AlarmTimeOut = alarmTimeOut;
+            AlarmResumed = alarmResumed;
+            UseNumbers = useNumbers;
+            SFXConnectionLost = _SFXConnectionLost;
+            SFXTimeOut = _SFXTimeOut;
+            SFXResumed = _SFXResumed;
+            OfflineCounter = offlineCounter;
         }
 
         public static void Reset()
         {
-            Delay               = 3000;
-            MaxPing             = 250;
-            OfflineCounter      = true;
-            BgColor             = new Pen(Color.FromArgb(70, 0, 0));
-            GoodColor           = new Pen(Color.FromArgb(120, 180, 0));
-            NormalColor         = new Pen(Color.FromArgb(255, 180, 0));
-            BadColor            = new Pen(Color.FromArgb(255, 0, 0));
-            RunOnStartup        = false;
-            TheIPAddress        = IPAddress.Parse("8.8.8.8"); // google ip
+            Delay = 3000;
+            MaxPing = 250;
+            OfflineCounter = true;
+            BgColor = new Pen(Color.FromArgb(70, 0, 0));
+            GoodColor = new Pen(Color.FromArgb(120, 180, 0));
+            NormalColor = new Pen(Color.FromArgb(255, 180, 0));
+            BadColor = new Pen(Color.FromArgb(255, 0, 0));
+            RunOnStartup = false;
+            TheIPAddress = IPAddress.Parse("8.8.8.8"); // google ip
             AlarmConnectionLost = false;
-            AlarmTimeOut        = false;
-            AlarmResumed        = false;
-            UseNumbers          = false;
-            SFXConnectionLost   = NONE_SFX;
-            SFXTimeOut          = NONE_SFX;
-            SFXResumed          = NONE_SFX;
-            RunOnStartup        = false;
+            AlarmTimeOut = false;
+            AlarmResumed = false;
+            UseNumbers = false;
+            SFXConnectionLost = NONE_SFX;
+            SFXTimeOut = NONE_SFX;
+            SFXResumed = NONE_SFX;
+            RunOnStartup = false;
         }
 
         public static void Load()
@@ -193,7 +196,7 @@ namespace PingoMeter
             }
         }
 
-        private static void SetPenFromString(ref Pen pen, string str)
+        private static void SetPenFromString(ref Pen? pen, string str)
         {
             if (str.IndexOf(':') != -1)
             {
@@ -210,6 +213,18 @@ namespace PingoMeter
 
         public static void Save()
         {
+            // Ensure all required fields are initialized
+            if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
+            {
+                Reset();
+
+                // After reset, these should never be null
+                if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
+                {
+                    throw new InvalidOperationException("Failed to initialize configuration values");
+                }
+            }
+
             var sb = new StringBuilder();
             sb.AppendLine("# PingoMeter config file");
 

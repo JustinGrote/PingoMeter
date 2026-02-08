@@ -7,12 +7,15 @@ using System.IO;
 using System.Media;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PingoMeter
 {
-    internal sealed class NotificationIcon
+    [SupportedOSPlatform("windows")]
+    internal sealed class NotificationIcon : IDisposable
     {
         const int BALLOON_TIP_TIME_OUT = 3000;
 
@@ -21,7 +24,7 @@ namespace PingoMeter
         IntPtr hicon;
 
         NotifyIcon notifyIcon;
-        ContextMenu notificationMenu;
+        ContextMenuStrip notificationMenu;
 
         IntPtr hiconOriginal;
         Image originalImage;
@@ -34,6 +37,8 @@ namespace PingoMeter
         SoundPlayer SFXConnectionLost;
         SoundPlayer SFXTimeOut;
         SoundPlayer SFXResumed;
+
+        System.Threading.Timer? pingTimer;
 
         enum PingHealthEnum
         {
@@ -52,24 +57,22 @@ namespace PingoMeter
         }
 
         AlarmEnum alarmStatus;
+        volatile bool timeOutAgain = false;
 
-        StartupCreator startupManager = new StartupViaLink(Application.StartupPath + @"\Resources\op.ico");
+        StartupCreator startupManager = new StartupViaRegistry();
 
         public NotificationIcon()
         {
             Config.Load();
             alarmStatus = AlarmEnum.None;
 
-            notificationMenu = new ContextMenu(
-                new MenuItem[]
-                {
-                    new MenuItem("Setting", MenuSetting),
-                    new MenuItem("Exit", MenuExitClick)
-                });
+            notificationMenu = new ContextMenuStrip();
+            notificationMenu.Items.Add("Setting", null, MenuSetting);
+            notificationMenu.Items.Add("Exit", null, MenuExitClick);
 
             notifyIcon = new NotifyIcon
             {
-                ContextMenu = notificationMenu,
+                ContextMenuStrip = notificationMenu,
                 Visible = true
             };
 
@@ -88,18 +91,63 @@ namespace PingoMeter
             SetIcon();
         }
 
-        ~NotificationIcon()
-        {
-            DestroyIcon(hicon);
-            DestroyIcon(hiconOriginal);
-            g.Dispose();
-        }
-
         public void Run()
         {
             notifyIcon.Visible = true;
-            ThreadPool.QueueUserWorkItem(PingPool, null);
+            
+            // Start the ping timer - use synchronous callback with fire-and-forget Task.Run
+            pingTimer = new System.Threading.Timer(_ => 
+            {
+                // Fire and forget - don't wait for the task to complete
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await PingAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle exceptions in the async operation
+                        // NotifyIcon is thread-safe for text updates
+                        try
+                        {
+                            notifyIcon.Text = $"Ping error: {ex.Message}";
+                        }
+                        catch
+                        {
+                            // Ignore if notification icon is disposed
+                        }
+                    }
+                });
+            }, null, 
+                TimeSpan.FromMilliseconds(999), 
+                TimeSpan.FromMilliseconds(Config.Delay));
+            
             Application.Run();
+        }
+
+        public void Dispose()
+        {
+            pingTimer?.Dispose();
+            
+            if (hicon != IntPtr.Zero)
+                DestroyIcon(hicon);
+            if (hiconOriginal != IntPtr.Zero)
+                DestroyIcon(hiconOriginal);
+            
+            g?.Dispose();
+            font?.Dispose();
+            font100?.Dispose();
+            drawable?.Dispose();
+            originalImage?.Dispose();
+            noneIcon?.Dispose();
+            
+            SFXConnectionLost?.Dispose();
+            SFXTimeOut?.Dispose();
+            SFXResumed?.Dispose();
+            
+            notifyIcon?.Dispose();
+            notificationMenu?.Dispose();
         }
 
         private void SetIcon()
@@ -251,116 +299,111 @@ namespace PingoMeter
             }
         }
 
-        // Ping on thread pool
-        private void PingPool(object _)
+        // Ping using async/await pattern
+        private async Task PingAsync()
         {
-            Thread.Sleep(999);
+            if (Config.TheIPAddress == null)
+            {
+                notifyIcon.Text = "Status: No IP address configured";
+                return;
+            }
 
             try
             {
-                var p = new Ping();
+                using var p = new Ping();
                 byte[] buffer = new byte[4];
 
-                // I have so much bad Internet that the timeout alarm goes out all the time. So, check twice.
-                bool timeOutAgain = false;
-
-                for (; ; )
+                try
                 {
-                    try
+                    PingReply reply = await p.SendPingAsync(Config.TheIPAddress, 5000, buffer);
+
+                    switch (reply.Status)
                     {
-                        PingReply reply = p.Send(Config.TheIPAddress, 5000, buffer);
+                        case IPStatus.TimedOut:
+                            DrawGraph(-1L);
 
-                        switch (reply.Status)
-                        {
-                            case IPStatus.TimedOut:
-                                DrawGraph(-1L);
-
-                                if (timeOutAgain)
+                            if (timeOutAgain)
+                            {
+                                notifyIcon.Text = "Status: Time out";
+                                if (alarmStatus == AlarmEnum.OK)
                                 {
-                                    notifyIcon.Text = "Status: Time out";
-                                    if (alarmStatus == AlarmEnum.OK)
-                                    {
-                                        if (Config.AlarmTimeOut)
-                                            notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Ping time out", ToolTipIcon.Warning);
+                                    if (Config.AlarmTimeOut)
+                                        notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Ping time out", ToolTipIcon.Warning);
 
-                                        PlaySound(SFXTimeOut, Config.SFXTimeOut);
-                                    }
-
-                                    alarmStatus = AlarmEnum.TimeOut;
-                                }
-                                else
-                                {
-                                    notifyIcon.Text = "Status: Time out?";
-                                    timeOutAgain = true;
-                                }
-                                break;
-
-                            case IPStatus.Success:
-                                DrawGraph(reply.RoundtripTime);
-
-                                if (alarmStatus != AlarmEnum.None && alarmStatus != AlarmEnum.OK)
-                                {
-                                    PlaySound(SFXResumed, Config.SFXResumed);
-
-                                    if (Config.AlarmResumed)
-                                        notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Ping resumed", ToolTipIcon.Info);
+                                    PlaySound(SFXTimeOut, Config.SFXTimeOut);
                                 }
 
-                                alarmStatus = AlarmEnum.OK;
-                                timeOutAgain = false;
-                                break;
+                                alarmStatus = AlarmEnum.TimeOut;
+                            }
+                            else
+                            {
+                                notifyIcon.Text = "Status: Time out?";
+                                timeOutAgain = true;
+                            }
+                            break;
 
-                            default:
+                        case IPStatus.Success:
+                            DrawGraph(reply.RoundtripTime);
 
-                                DrawGraph(-1L);
-                                var statusName = GetIPStatusName(reply.Status);
-                                notifyIcon.Text = "Status: " + statusName;
+                            if (alarmStatus != AlarmEnum.None && alarmStatus != AlarmEnum.OK)
+                            {
+                                PlaySound(SFXResumed, Config.SFXResumed);
+
+                                if (Config.AlarmResumed)
+                                    notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Ping resumed", ToolTipIcon.Info);
+                            }
+
+                            alarmStatus = AlarmEnum.OK;
+                            timeOutAgain = false;
+                            break;
+
+                        default:
+
+                            DrawGraph(-1L);
+                            var statusName = GetIPStatusName(reply.Status);
+                            notifyIcon.Text = "Status: " + statusName;
 
 
 
-                                if (alarmStatus != AlarmEnum.ConnectionLost)
-                                {
-                                    PlaySound(SFXConnectionLost, Config.SFXConnectionLost);
+                            if (alarmStatus != AlarmEnum.ConnectionLost)
+                            {
+                                PlaySound(SFXConnectionLost, Config.SFXConnectionLost);
 
-                                    if (Config.AlarmConnectionLost)
-                                        notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", statusName, ToolTipIcon.Error);
-                                }
+                                if (Config.AlarmConnectionLost)
+                                    notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", statusName, ToolTipIcon.Error);
+                            }
 
-                                alarmStatus = AlarmEnum.ConnectionLost;
-                                break;
-                        }
+                            alarmStatus = AlarmEnum.ConnectionLost;
+                            break;
                     }
-                    catch (PingException)
+                }
+                catch (PingException)
+                {
+                    DrawGraph(-1L);
+                    notifyIcon.Text = "Status: Connection lost.";
+
+                    if (alarmStatus != AlarmEnum.ConnectionLost)
                     {
-                        DrawGraph(-1L);
-                        notifyIcon.Text = "Status: Connection lost.";
+                        PlaySound(SFXConnectionLost, Config.SFXConnectionLost);
 
-                        if (alarmStatus != AlarmEnum.ConnectionLost)
-                        {
-                            PlaySound(SFXConnectionLost, Config.SFXConnectionLost);
-
-                            if (Config.AlarmConnectionLost)
-                                notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Connection lost", ToolTipIcon.Error);
-                        }
-
-                        alarmStatus = AlarmEnum.ConnectionLost;
-                    }
-                    catch (Exception ex)
-                    {
-                        DrawGraph(-1L);
-                        notifyIcon.Text = ex.Message;
-                        notifyIcon.Text = "Status: Error.";
-
-                        notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Error: " + ex.Message, ToolTipIcon.Error);
-                        alarmStatus = AlarmEnum.None;
+                        if (Config.AlarmConnectionLost)
+                            notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Connection lost", ToolTipIcon.Error);
                     }
 
-                    Thread.Sleep(Config.Delay);
+                    alarmStatus = AlarmEnum.ConnectionLost;
+                }
+                catch (Exception ex)
+                {
+                    DrawGraph(-1L);
+                    notifyIcon.Text = $"Status: Error - {ex.Message}";
+
+                    notifyIcon.ShowBalloonTip(BALLOON_TIP_TIME_OUT, "PingoMeter", "Error: " + ex.Message, ToolTipIcon.Error);
+                    alarmStatus = AlarmEnum.None;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString(), "PingoMeter crash log");
+                notifyIcon.Text = $"Status: Error - {ex.Message}";
                 alarmStatus = AlarmEnum.None;
             }
         }

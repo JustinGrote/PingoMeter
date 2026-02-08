@@ -1,6 +1,5 @@
-The MIT License (MIT)
-
-Copyright (c) 2017 EFLFE
+# MIT License
+Copyright (c) 2025 Justin Grote (github.com/JustinGrote)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -21,7 +21,7 @@ namespace PingoMeter
         IntPtr hicon;
 
         NotifyIcon notifyIcon;
-        ContextMenu notificationMenu;
+        ContextMenuStrip notificationMenu;
 
         IntPtr hiconOriginal;
         Image originalImage;
@@ -53,23 +53,20 @@ namespace PingoMeter
 
         AlarmEnum alarmStatus;
 
-        StartupCreator startupManager = new StartupViaLink(Application.StartupPath + @"\Resources\op.ico");
+        StartupCreator startupManager = new StartupViaRegistry();
 
         public NotificationIcon()
         {
             Config.Load();
             alarmStatus = AlarmEnum.None;
 
-            notificationMenu = new ContextMenu(
-                new MenuItem[]
-                {
-                    new MenuItem("Setting", MenuSetting),
-                    new MenuItem("Exit", MenuExitClick)
-                });
+            notificationMenu = new ContextMenuStrip();
+            notificationMenu.Items.Add("Setting", null, MenuSetting);
+            notificationMenu.Items.Add("Exit", null, MenuExitClick);
 
             notifyIcon = new NotifyIcon
             {
-                ContextMenu = notificationMenu,
+                ContextMenuStrip = notificationMenu,
                 Visible = true
             };
 

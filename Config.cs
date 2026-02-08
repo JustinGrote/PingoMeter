@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Runtime.Versioning;
@@ -212,9 +213,16 @@ namespace PingoMeter
 
         public static void Save()
         {
+            // Ensure all required fields are initialized
             if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
             {
                 Reset();
+                
+                // After reset, these should never be null
+                if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
+                {
+                    throw new InvalidOperationException("Failed to initialize configuration values");
+                }
             }
 
             var sb = new StringBuilder();
@@ -223,14 +231,14 @@ namespace PingoMeter
             sb.AppendLine($"{nameof(Delay)} {Delay}");
             sb.AppendLine($"{nameof(MaxPing)} {MaxPing}");
 
-            sb.AppendLine($"{nameof(BgColor)} {BgColor!.Color.R}:{BgColor.Color.G}:{BgColor.Color.B}");
-            sb.AppendLine($"{nameof(GoodColor)} {GoodColor!.Color.R}:{GoodColor.Color.G}:{GoodColor.Color.B}");
-            sb.AppendLine($"{nameof(NormalColor)} {NormalColor!.Color.R}:{NormalColor.Color.G}:{NormalColor.Color.B}");
-            sb.AppendLine($"{nameof(BadColor)} {BadColor!.Color.R}:{BadColor.Color.G}:{BadColor.Color.B}");
+            sb.AppendLine($"{nameof(BgColor)} {BgColor.Color.R}:{BgColor.Color.G}:{BgColor.Color.B}");
+            sb.AppendLine($"{nameof(GoodColor)} {GoodColor.Color.R}:{GoodColor.Color.G}:{GoodColor.Color.B}");
+            sb.AppendLine($"{nameof(NormalColor)} {NormalColor.Color.R}:{NormalColor.Color.G}:{NormalColor.Color.B}");
+            sb.AppendLine($"{nameof(BadColor)} {BadColor.Color.R}:{BadColor.Color.G}:{BadColor.Color.B}");
 
             sb.AppendLine($"{nameof(RunOnStartup)} {RunOnStartup}");
 
-            sb.AppendLine($"{nameof(TheIPAddress)} {TheIPAddress!.ToString()}");
+            sb.AppendLine($"{nameof(TheIPAddress)} {TheIPAddress.ToString()}");
 
             sb.AppendLine($"{nameof(AlarmConnectionLost)} {AlarmConnectionLost}");
             sb.AppendLine($"{nameof(AlarmTimeOut)} {AlarmTimeOut}");

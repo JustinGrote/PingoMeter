@@ -57,7 +57,7 @@ namespace PingoMeter
         }
 
         AlarmEnum alarmStatus;
-        bool timeOutAgain = false;
+        volatile bool timeOutAgain = false;
 
         StartupCreator startupManager = new StartupViaRegistry();
 
@@ -95,18 +95,30 @@ namespace PingoMeter
         {
             notifyIcon.Visible = true;
             
-            // Start the ping timer - use Task.Run to properly handle async method
+            // Start the ping timer - use synchronous callback with fire-and-forget Task.Run
             pingTimer = new System.Threading.Timer(_ => 
             {
-                try
+                // Fire and forget - don't wait for the task to complete
+                _ = Task.Run(async () =>
                 {
-                    Task.Run(async () => await PingAsync()).Wait();
-                }
-                catch (Exception ex)
-                {
-                    // Log or handle timer exceptions
-                    notifyIcon.Text = $"Timer error: {ex.Message}";
-                }
+                    try
+                    {
+                        await PingAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle exceptions in the async operation
+                        // NotifyIcon is thread-safe for text updates
+                        try
+                        {
+                            notifyIcon.Text = $"Ping error: {ex.Message}";
+                        }
+                        catch
+                        {
+                            // Ignore if notification icon is disposed
+                        }
+                    }
+                });
             }, null, 
                 TimeSpan.FromMilliseconds(999), 
                 TimeSpan.FromMilliseconds(Config.Delay));

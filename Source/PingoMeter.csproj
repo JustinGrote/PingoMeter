@@ -7,7 +7,7 @@
     <ApplicationIcon>Resources\op.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <ImplicitUsings>disable</ImplicitUsings>
+    <ImplicitUsings>enable</ImplicitUsings>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PublishDir>..\Release\</PublishDir>
@@ -18,7 +18,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
   </ItemGroup>
 

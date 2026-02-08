@@ -9,17 +9,273 @@
 //------------------------------------------------------------------------------
 
 namespace PingoMeter.Properties {
-    
-    
+
+
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.3.0.0")]
+    [global::System.Configuration.SettingsProviderAttribute("System.Configuration.LocalFileSettingsProvider")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
-        
+
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
-        
+
         public static Settings Default {
             get {
                 return defaultInstance;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3000")]
+        public int Delay
+        {
+            get
+            {
+                return ((int)(this["Delay"]));
+            }
+            set
+            {
+                this["Delay"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1000")]
+        public int TraceTimeoutMs
+        {
+            get
+            {
+                return ((int)(this["TraceTimeoutMs"]));
+            }
+            set
+            {
+                this["TraceTimeoutMs"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("250")]
+        public int MaxPing
+        {
+            get
+            {
+                return ((int)(this["MaxPing"]));
+            }
+            set
+            {
+                this["MaxPing"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool OfflineCounter
+        {
+            get
+            {
+                return ((bool)(this["OfflineCounter"]));
+            }
+            set
+            {
+                this["OfflineCounter"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("70:0:0")]
+        public string BgColor
+        {
+            get
+            {
+                return ((string)(this["BgColor"]));
+            }
+            set
+            {
+                this["BgColor"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("120:180:0")]
+        public string GoodColor
+        {
+            get
+            {
+                return ((string)(this["GoodColor"]));
+            }
+            set
+            {
+                this["GoodColor"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("255:180:0")]
+        public string NormalColor
+        {
+            get
+            {
+                return ((string)(this["NormalColor"]));
+            }
+            set
+            {
+                this["NormalColor"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("255:0:0")]
+        public string BadColor
+        {
+            get
+            {
+                return ((string)(this["BadColor"]));
+            }
+            set
+            {
+                this["BadColor"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RunOnStartup
+        {
+            get
+            {
+                return ((bool)(this["RunOnStartup"]));
+            }
+            set
+            {
+                this["RunOnStartup"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("8.8.8.8")]
+        public string TheIPAddress
+        {
+            get
+            {
+                return ((string)(this["TheIPAddress"]));
+            }
+            set
+            {
+                this["TheIPAddress"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AlarmConnectionLost
+        {
+            get
+            {
+                return ((bool)(this["AlarmConnectionLost"]));
+            }
+            set
+            {
+                this["AlarmConnectionLost"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AlarmTimeOut
+        {
+            get
+            {
+                return ((bool)(this["AlarmTimeOut"]));
+            }
+            set
+            {
+                this["AlarmTimeOut"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AlarmResumed
+        {
+            get
+            {
+                return ((bool)(this["AlarmResumed"]));
+            }
+            set
+            {
+                this["AlarmResumed"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseNumbers
+        {
+            get
+            {
+                return ((bool)(this["UseNumbers"]));
+            }
+            set
+            {
+                this["UseNumbers"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("(none)")]
+        public string SFXConnectionLost
+        {
+            get
+            {
+                return ((string)(this["SFXConnectionLost"]));
+            }
+            set
+            {
+                this["SFXConnectionLost"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("(none)")]
+        public string SFXTimeOut
+        {
+            get
+            {
+                return ((string)(this["SFXTimeOut"]));
+            }
+            set
+            {
+                this["SFXTimeOut"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("(none)")]
+        public string SFXResumed
+        {
+            get
+            {
+                return ((string)(this["SFXResumed"]));
+            }
+            set
+            {
+                this["SFXResumed"] = value;
             }
         }
     }

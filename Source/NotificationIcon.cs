@@ -61,6 +61,9 @@ namespace PingoMeter
 
         StartupCreator startupManager = new StartupViaRegistry();
 
+        private DateTime lastNotifyIconClick = DateTime.MinValue;
+        private const int DOUBLE_CLICK_TIMEOUT = 300; // milliseconds
+
         public NotificationIcon()
         {
             Config.Load();
@@ -68,6 +71,7 @@ namespace PingoMeter
 
             notificationMenu = new ContextMenuStrip();
             notificationMenu.Items.Add("Setting", null, MenuSetting);
+            notificationMenu.Items.Add("Traceroute", null, MenuTraceroute);
             notificationMenu.Items.Add("Exit", null, MenuExitClick);
 
             notifyIcon = new NotifyIcon
@@ -75,6 +79,9 @@ namespace PingoMeter
                 ContextMenuStrip = notificationMenu,
                 Visible = true
             };
+
+            // Hook into mouse click to detect double-clicks
+            notifyIcon.MouseClick += NotifyIcon_MouseClick;
 
             SFXConnectionLost = new SoundPlayer();
             SFXTimeOut        = new SoundPlayer();
@@ -440,6 +447,41 @@ namespace PingoMeter
         }
 
         // Event Handlers
+        private void NotifyIcon_MouseClick(object? sender, MouseEventArgs e)
+        {
+            // Detect double-click on left mouse button
+            if (e.Button != MouseButtons.Left)
+                return;
+
+            DateTime now = DateTime.Now;
+            TimeSpan elapsed = now - lastNotifyIconClick;
+
+            if (elapsed.TotalMilliseconds <= DOUBLE_CLICK_TIMEOUT)
+            {
+                // Double-click detected
+                StartTraceroute();
+            }
+
+            lastNotifyIconClick = now;
+        }
+
+        private void StartTraceroute()
+        {
+            if (Config.TheIPAddress == null)
+            {
+                MessageBox.Show("No IP address configured. Please set one in Settings.", "Traceroute Error");
+                return;
+            }
+
+            var tracerouteWindow = new TracerouteForm(Config.TheIPAddress, Config.GetIPName);
+            tracerouteWindow.Show();
+        }
+
+        private void MenuTraceroute(object? sender, EventArgs e)
+        {
+            StartTraceroute();
+        }
+
         private void MenuExitClick(object? sender, EventArgs e)
         {
             notifyIcon.Visible = false;

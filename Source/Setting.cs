@@ -43,6 +43,7 @@ namespace PingoMeter
         {
             Config.SetAll(
                 delay: (int)delay.Value,
+                traceTimeoutMs: (int)traceTimeout.Value,
                 maxPing: (int)maxPing.Value,
                 bgColor: setBgColor.BackColor,
                 goodColor: setGoodColor.BackColor,
@@ -63,6 +64,7 @@ namespace PingoMeter
         private void SyncFromConfig()
         {
             delay.Value = Config.Delay;
+            traceTimeout.Value = Config.TraceTimeoutMs;
             maxPing.Value = Config.MaxPing;
 
             if (Config.BgColor != null)

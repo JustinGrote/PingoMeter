@@ -1,258 +1,242 @@
-﻿using System;
-using System.Drawing;
-using System.IO;
 using System.Net;
 using System.Runtime.Versioning;
-using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace PingoMeter
 {
-    [SupportedOSPlatform("windows")]
-    internal static class Config
-    {
+	[SupportedOSPlatform("windows")]
+	internal static class Config
+	{
+		private const string ConfigFileName = "appsettings.json";
+		private const string ConfigSectionName = "PingoMeter";
+		private static readonly string ConfigFolder = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+				"PingoMeter");
+		private static readonly string ConfigPath = Path.Combine(ConfigFolder, ConfigFileName);
 
+		public static int Delay = 3000;
+		public static int TraceTimeoutMs = 1000;
 
-        private const string CONF_FILE_NAME = "config.txt";
+		public static int MaxPing;
+		public static bool OfflineCounter = true;
 
-        public static int Delay = 3000;
+		public static Pen? BgColor;
+		public static Pen? GoodColor;
+		public static Pen? NormalColor;
+		public static Pen? BadColor;
 
-        public static int MaxPing;
-        public static bool OfflineCounter = true;
+		public static bool RunOnStartup;
 
-        public static Pen? BgColor;
-        public static Pen? GoodColor;
-        public static Pen? NormalColor;
-        public static Pen? BadColor;
+		private static string ipName = string.Empty;
+		private static IPAddress? ipAddress;
 
-        public static bool RunOnStartup;
+		public static IPAddress? TheIPAddress
+		{
+			get => ipAddress;
+			set
+			{
+				ipAddress = value;
+				ipName = value?.ToString() ?? string.Empty;
+			}
+		}
 
-        private static string ipName = string.Empty;
-        private static IPAddress? ipAddress;
+		public static string GetIPName => ipName;
 
-        public static IPAddress? TheIPAddress
-        {
-            get => ipAddress;
-            set
-            {
-                ipAddress = value;
-                ipName = value?.ToString() ?? string.Empty;
-            }
-        }
+		public static bool AlarmConnectionLost;
+		public static bool AlarmTimeOut;
+		public static bool AlarmResumed;
 
-        public static string GetIPName => ipName;
+		// sound effects path to .wav (or "(none)")
+		public const string NONE_SFX = "(none)";
+		public static string SFXConnectionLost = NONE_SFX;
+		public static string SFXTimeOut = NONE_SFX;
+		public static string SFXResumed = NONE_SFX;
 
-        public static bool AlarmConnectionLost;
-        public static bool AlarmTimeOut;
-        public static bool AlarmResumed;
+		/// <summary> Use numbers for the ping instead of a graph. </summary>
+		public static bool UseNumbers;
 
-        // sound effects path to .wav (or "(none)")
-        public const string NONE_SFX = "(none)";
-        public static string SFXConnectionLost = NONE_SFX;
-        public static string SFXTimeOut = NONE_SFX;
-        public static string SFXResumed = NONE_SFX;
+		static Config() => Reset();
 
-        /// <summary> Use numbers for the ping instead of a graph. </summary>
-        public static bool UseNumbers;
+		public static void SetAll(int delay, int traceTimeoutMs, int maxPing, Color bgColor, Color goodColor, Color normalColor,
+															Color badColor, bool runOnStartup, IPAddress address,
+																	bool alarmConnectionLost, bool alarmTimeOut, bool alarmResumed, bool useNumbers,
+																	string _SFXConnectionLost, string _SFXTimeOut, string _SFXResumed, bool offlineCounter)
+		{
+			Delay = delay;
+			TraceTimeoutMs = traceTimeoutMs;
+			MaxPing = maxPing;
+			BgColor = new Pen(bgColor);
+			GoodColor = new Pen(goodColor);
+			NormalColor = new Pen(normalColor);
+			BadColor = new Pen(badColor);
+			RunOnStartup = runOnStartup;
+			TheIPAddress = address;
+			AlarmConnectionLost = alarmConnectionLost;
+			AlarmTimeOut = alarmTimeOut;
+			AlarmResumed = alarmResumed;
+			UseNumbers = useNumbers;
+			SFXConnectionLost = _SFXConnectionLost;
+			SFXTimeOut = _SFXTimeOut;
+			SFXResumed = _SFXResumed;
+			OfflineCounter = offlineCounter;
+		}
 
+		public static void Reset()
+		{
+			Delay = 3000;
+			TraceTimeoutMs = 1000;
+			MaxPing = 250;
+			OfflineCounter = true;
+			BgColor = new Pen(Color.FromArgb(70, 0, 0));
+			GoodColor = new Pen(Color.FromArgb(120, 180, 0));
+			NormalColor = new Pen(Color.FromArgb(255, 180, 0));
+			BadColor = new Pen(Color.FromArgb(255, 0, 0));
+			RunOnStartup = false;
+			TheIPAddress = IPAddress.Parse("8.8.8.8"); // google ip
+			AlarmConnectionLost = false;
+			AlarmTimeOut = false;
+			AlarmResumed = false;
+			UseNumbers = false;
+			SFXConnectionLost = NONE_SFX;
+			SFXTimeOut = NONE_SFX;
+			SFXResumed = NONE_SFX;
+			RunOnStartup = false;
+		}
 
+		public static void Load()
+		{
+			Reset();
+			Directory.CreateDirectory(ConfigFolder);
 
-        static Config() => Reset();
+			var config = new ConfigurationBuilder()
+					.SetBasePath(ConfigFolder)
+					.AddJsonFile(ConfigFileName, optional: true, reloadOnChange: false)
+					.Build();
 
-        public static void SetAll(int delay, int maxPing, Color bgColor, Color goodColor, Color normalColor,
-                                  Color badColor, bool runOnStartup, IPAddress address,
-                                  bool alarmConnectionLost, bool alarmTimeOut, bool alarmResumed, bool useNumbers,
-                                  string _SFXConnectionLost, string _SFXTimeOut, string _SFXResumed, bool offlineCounter)
-        {
-            Delay = delay;
-            MaxPing = maxPing;
-            BgColor = new Pen(bgColor);
-            GoodColor = new Pen(goodColor);
-            NormalColor = new Pen(normalColor);
-            BadColor = new Pen(badColor);
-            RunOnStartup = runOnStartup;
-            TheIPAddress = address;
-            AlarmConnectionLost = alarmConnectionLost;
-            AlarmTimeOut = alarmTimeOut;
-            AlarmResumed = alarmResumed;
-            UseNumbers = useNumbers;
-            SFXConnectionLost = _SFXConnectionLost;
-            SFXTimeOut = _SFXTimeOut;
-            SFXResumed = _SFXResumed;
-            OfflineCounter = offlineCounter;
-        }
+			Delay = GetInt(config, Key(nameof(Delay)), Delay);
+			TraceTimeoutMs = GetInt(config, Key(nameof(TraceTimeoutMs)), TraceTimeoutMs);
+			MaxPing = GetInt(config, Key(nameof(MaxPing)), MaxPing);
+			OfflineCounter = GetBool(config, Key(nameof(OfflineCounter)), OfflineCounter);
 
-        public static void Reset()
-        {
-            Delay = 3000;
-            MaxPing = 250;
-            OfflineCounter = true;
-            BgColor = new Pen(Color.FromArgb(70, 0, 0));
-            GoodColor = new Pen(Color.FromArgb(120, 180, 0));
-            NormalColor = new Pen(Color.FromArgb(255, 180, 0));
-            BadColor = new Pen(Color.FromArgb(255, 0, 0));
-            RunOnStartup = false;
-            TheIPAddress = IPAddress.Parse("8.8.8.8"); // google ip
-            AlarmConnectionLost = false;
-            AlarmTimeOut = false;
-            AlarmResumed = false;
-            UseNumbers = false;
-            SFXConnectionLost = NONE_SFX;
-            SFXTimeOut = NONE_SFX;
-            SFXResumed = NONE_SFX;
-            RunOnStartup = false;
-        }
+			SetPenFromString(ref BgColor, config[Key(nameof(BgColor))] ?? string.Empty);
+			SetPenFromString(ref GoodColor, config[Key(nameof(GoodColor))] ?? string.Empty);
+			SetPenFromString(ref NormalColor, config[Key(nameof(NormalColor))] ?? string.Empty);
+			SetPenFromString(ref BadColor, config[Key(nameof(BadColor))] ?? string.Empty);
 
-        public static void Load()
-        {
-            if (File.Exists(CONF_FILE_NAME))
-            {
-                string[] conf = File.ReadAllLines(CONF_FILE_NAME);
+			RunOnStartup = GetBool(config, Key(nameof(RunOnStartup)), RunOnStartup);
 
-                for (int i = 0; i < conf.Length; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(conf[i]) || conf[i].Trim()[0] == '#')
-                        continue;
+			string? ipText = config[Key(nameof(TheIPAddress))];
+			if (!string.IsNullOrWhiteSpace(ipText) && IPAddress.TryParse(ipText, out IPAddress? ip) && ip != null)
+			{
+				TheIPAddress = ip;
+			}
 
-                    string line = conf[i].Trim();
-                    string[] split = line.Split(new char[] { ' ' }, 2);
+			AlarmConnectionLost = GetBool(config, Key(nameof(AlarmConnectionLost)), AlarmConnectionLost);
+			AlarmTimeOut = GetBool(config, Key(nameof(AlarmTimeOut)), AlarmTimeOut);
+			AlarmResumed = GetBool(config, Key(nameof(AlarmResumed)), AlarmResumed);
+			UseNumbers = GetBool(config, Key(nameof(UseNumbers)), UseNumbers);
 
-                    if (split.Length == 2)
-                    {
-                        switch (split[0])
-                        {
-                            case nameof(Delay):
-                                int.TryParse(split[1], out Delay);
-                                break;
+			SFXConnectionLost = NormalizeSfx(config[Key(nameof(SFXConnectionLost))]);
+			SFXTimeOut = NormalizeSfx(config[Key(nameof(SFXTimeOut))]);
+			SFXResumed = NormalizeSfx(config[Key(nameof(SFXResumed))]);
+		}
 
-                            case nameof(MaxPing):
-                                int.TryParse(split[1], out MaxPing);
-                                break;
+		private static int GetInt(IConfiguration config, string key, int fallback)
+		{
+			if (int.TryParse(config[key], out int result))
+				return result;
 
-                            case nameof(BgColor):
-                                SetPenFromString(ref BgColor, split[1]);
-                                break;
+			return fallback;
+		}
 
-                            case nameof(GoodColor):
-                                SetPenFromString(ref GoodColor, split[1]);
-                                break;
+		private static bool GetBool(IConfiguration config, string key, bool fallback)
+		{
+			if (bool.TryParse(config[key], out bool result))
+				return result;
 
-                            case nameof(NormalColor):
-                                SetPenFromString(ref NormalColor, split[1]);
-                                break;
+			return fallback;
+		}
 
-                            case nameof(BadColor):
-                                SetPenFromString(ref BadColor, split[1]);
-                                break;
+		private static string Key(string name)
+		{
+			return $"{ConfigSectionName}:{name}";
+		}
 
-                            case nameof(RunOnStartup):
-                                bool.TryParse(split[1], out RunOnStartup);
-                                break;
+		private static void SetPenFromString(ref Pen? pen, string str)
+		{
+			if (str.IndexOf(':') != -1)
+			{
+				string[] rgb = str.Split(':');
+				if (rgb.Length == 3)
+				{
+					if (int.TryParse(rgb[0], out int r) && r > -1 && r < 256 &&
+							int.TryParse(rgb[1], out int g) && g > -1 && g < 256 &&
+							int.TryParse(rgb[2], out int b) && b > -1 && b < 256)
+						pen = new Pen(Color.FromArgb(r, g, b));
+				}
+			}
+		}
 
-                            case "ipaddress":
-                            case nameof(TheIPAddress):
-                                if (IPAddress.TryParse(split[1], out IPAddress? ip) && ip != null)
-                                    TheIPAddress = ip;
-                                break;
+		private static string ColorToString(Pen? pen)
+		{
+			if (pen == null)
+				return string.Empty;
 
-                            case nameof(AlarmConnectionLost):
-                                bool.TryParse(split[1], out AlarmConnectionLost);
-                                break;
+			return $"{pen.Color.R}:{pen.Color.G}:{pen.Color.B}";
+		}
 
-                            case nameof(AlarmTimeOut):
-                                bool.TryParse(split[1], out AlarmTimeOut);
-                                break;
+		private static string NormalizeSfx(string? value)
+		{
+			return string.IsNullOrWhiteSpace(value) ? NONE_SFX : value;
+		}
 
-                            case nameof(AlarmResumed):
-                                bool.TryParse(split[1], out AlarmResumed);
-                                break;
+		public static void Save()
+		{
+			// Ensure all required fields are initialized
+			if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
+			{
+				Reset();
 
-                            case nameof(UseNumbers):
-                                bool.TryParse(split[1], out UseNumbers);
-                                break;
+				// After reset, these should never be null
+				if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
+				{
+					throw new InvalidOperationException("Failed to initialize configuration values");
+				}
+			}
 
-                            case nameof(SFXConnectionLost):
-                                SFXConnectionLost = split[1];
-                                break;
+			Directory.CreateDirectory(ConfigFolder);
 
-                            case nameof(SFXTimeOut):
-                                SFXTimeOut = split[1];
-                                break;
+			var root = new Dictionary<string, object?>
+			{
+				[ConfigSectionName] = new Dictionary<string, object?>
+				{
+					[nameof(Delay)] = Delay,
+					[nameof(TraceTimeoutMs)] = TraceTimeoutMs,
+					[nameof(MaxPing)] = MaxPing,
+					[nameof(OfflineCounter)] = OfflineCounter,
+					[nameof(BgColor)] = ColorToString(BgColor),
+					[nameof(GoodColor)] = ColorToString(GoodColor),
+					[nameof(NormalColor)] = ColorToString(NormalColor),
+					[nameof(BadColor)] = ColorToString(BadColor),
+					[nameof(RunOnStartup)] = RunOnStartup,
+					[nameof(TheIPAddress)] = TheIPAddress?.ToString() ?? string.Empty,
+					[nameof(AlarmConnectionLost)] = AlarmConnectionLost,
+					[nameof(AlarmTimeOut)] = AlarmTimeOut,
+					[nameof(AlarmResumed)] = AlarmResumed,
+					[nameof(UseNumbers)] = UseNumbers,
+					[nameof(SFXConnectionLost)] = SFXConnectionLost,
+					[nameof(SFXTimeOut)] = SFXTimeOut,
+					[nameof(SFXResumed)] = SFXResumed
+				}
+			};
 
-                            case nameof(SFXResumed):
-                                SFXResumed = split[1];
-                                break;
+			var json = JsonSerializer.Serialize(root, new JsonSerializerOptions
+			{
+				WriteIndented = true
+			});
 
-                            case nameof(OfflineCounter):
-                                bool.TryParse(split[1], out OfflineCounter);
-                                break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                Reset();
-                Save();
-            }
-        }
-
-        private static void SetPenFromString(ref Pen? pen, string str)
-        {
-            if (str.IndexOf(':') != -1)
-            {
-                string[] rgb = str.Split(':');
-                if (rgb.Length == 3)
-                {
-                    if (int.TryParse(rgb[0], out int r) && r > -1 && r < 256 &&
-                        int.TryParse(rgb[1], out int g) && g > -1 && g < 256 &&
-                        int.TryParse(rgb[2], out int b) && b > -1 && b < 256)
-                        pen = new Pen(Color.FromArgb(r, g, b));
-                }
-            }
-        }
-
-        public static void Save()
-        {
-            // Ensure all required fields are initialized
-            if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
-            {
-                Reset();
-
-                // After reset, these should never be null
-                if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
-                {
-                    throw new InvalidOperationException("Failed to initialize configuration values");
-                }
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine("# PingoMeter config file");
-
-            sb.AppendLine($"{nameof(Delay)} {Delay}");
-            sb.AppendLine($"{nameof(MaxPing)} {MaxPing}");
-
-            sb.AppendLine($"{nameof(BgColor)} {BgColor.Color.R}:{BgColor.Color.G}:{BgColor.Color.B}");
-            sb.AppendLine($"{nameof(GoodColor)} {GoodColor.Color.R}:{GoodColor.Color.G}:{GoodColor.Color.B}");
-            sb.AppendLine($"{nameof(NormalColor)} {NormalColor.Color.R}:{NormalColor.Color.G}:{NormalColor.Color.B}");
-            sb.AppendLine($"{nameof(BadColor)} {BadColor.Color.R}:{BadColor.Color.G}:{BadColor.Color.B}");
-
-            sb.AppendLine($"{nameof(RunOnStartup)} {RunOnStartup}");
-
-            sb.AppendLine($"{nameof(TheIPAddress)} {TheIPAddress.ToString()}");
-
-            sb.AppendLine($"{nameof(AlarmConnectionLost)} {AlarmConnectionLost}");
-            sb.AppendLine($"{nameof(AlarmTimeOut)} {AlarmTimeOut}");
-            sb.AppendLine($"{nameof(AlarmResumed)} {AlarmResumed}");
-            sb.AppendLine($"{nameof(UseNumbers)} {UseNumbers}");
-
-            sb.AppendLine($"{nameof(SFXConnectionLost)} {SFXConnectionLost}");
-            sb.AppendLine($"{nameof(SFXTimeOut)} {SFXTimeOut}");
-            sb.AppendLine($"{nameof(SFXResumed)} {SFXResumed}");
-
-            sb.AppendLine($"{nameof(OfflineCounter)} {OfflineCounter}");
-
-            File.WriteAllText(CONF_FILE_NAME, sb.ToString());
-        }
-
-    }
+			File.WriteAllText(ConfigPath, json);
+		}
+	}
 }

@@ -80,8 +80,8 @@ namespace PingoMeter
             SFXTimeOut        = new SoundPlayer();
             SFXResumed        = new SoundPlayer();
 
-            var apppath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            originalImage = Image.FromFile(System.IO.Path.Combine(apppath, "Resources\\none.png"));
+            string baseDir = AppContext.BaseDirectory ?? "";
+            originalImage = Image.FromFile(System.IO.Path.Combine(baseDir, "Resources\\none.png"));
             drawable = Properties.Resources.none;
             hiconOriginal = Properties.Resources.none.GetHicon();
             noneIcon = Icon.FromHandle(hiconOriginal);
@@ -94,9 +94,9 @@ namespace PingoMeter
         public void Run()
         {
             notifyIcon.Visible = true;
-            
+
             // Start the ping timer - use synchronous callback with fire-and-forget Task.Run
-            pingTimer = new System.Threading.Timer(_ => 
+            pingTimer = new System.Threading.Timer(_ =>
             {
                 // Fire and forget - don't wait for the task to complete
                 _ = Task.Run(async () =>
@@ -119,33 +119,33 @@ namespace PingoMeter
                         }
                     }
                 });
-            }, null, 
-                TimeSpan.FromMilliseconds(999), 
+            }, null,
+                TimeSpan.FromMilliseconds(999),
                 TimeSpan.FromMilliseconds(Config.Delay));
-            
+
             Application.Run();
         }
 
         public void Dispose()
         {
             pingTimer?.Dispose();
-            
+
             if (hicon != IntPtr.Zero)
                 DestroyIcon(hicon);
             if (hiconOriginal != IntPtr.Zero)
                 DestroyIcon(hiconOriginal);
-            
+
             g?.Dispose();
             font?.Dispose();
             font100?.Dispose();
             drawable?.Dispose();
             originalImage?.Dispose();
             noneIcon?.Dispose();
-            
+
             SFXConnectionLost?.Dispose();
             SFXTimeOut?.Dispose();
             SFXResumed?.Dispose();
-            
+
             notifyIcon?.Dispose();
             notificationMenu?.Dispose();
         }
@@ -154,7 +154,7 @@ namespace PingoMeter
         {
             // Update the notification icon to use our new icon,
             // and destroy the old icon so we don't leak memory.
-            Icon oldIcon = notifyIcon.Icon;
+            Icon? oldIcon = notifyIcon.Icon;
 
             hicon = drawable.GetHicon();
             notifyIcon.Icon = Icon.FromHandle(hicon);
@@ -193,12 +193,14 @@ namespace PingoMeter
                         offlineElapsed = (long)(DateTime.Now - offlineTimer).Value.TotalSeconds;
                     }
 
-                    var useFont = font;
-                    if (offlineElapsed > 100) useFont = font100;
+                    var useFont = font ?? font100;
+                    if (offlineElapsed > 100)
+                        useFont = font100 ?? font;
                     if (offlineElapsed > 999) offlineElapsed = 999;
 
                     g.FillRectangle(Brushes.Red, 0, 0, 16, 16);
-                    g.DrawString(offlineElapsed.ToString(), useFont, Brushes.Black, -1, 1);
+                    if (useFont != null)
+                        g.DrawString(offlineElapsed.ToString(), useFont, Brushes.Black, -1, 1);
                     SetIcon();
                 }
             }
@@ -220,8 +222,8 @@ namespace PingoMeter
 
                 if (Config.UseNumbers)
                 {
-                    Brush bgBrush = null;
-                    Brush fontBrush = null;
+                    Brush? bgBrush = null;
+                    Brush? fontBrush = null;
 
                     /*
                     if(value>99)
@@ -262,13 +264,16 @@ namespace PingoMeter
                     if (value > 99)
                         value = 99;
 
-                    g.FillRectangle(bgBrush, 0, 0, 16, 16);
-                    g.DrawString(value.ToString(), font, fontBrush, -1, 1);
-                    SetIcon();
+                    if (bgBrush != null && fontBrush != null)
+                    {
+                        g.FillRectangle(bgBrush, 0, 0, 16, 16);
+                        g.DrawString(value.ToString(), font, fontBrush, -1, 1);
+                        SetIcon();
+                    }
                 }
                 else
                 {
-                    Pen lineColor = null;
+                    Pen? lineColor = null;
 
                     switch (pingHealth)
                     {
@@ -289,9 +294,11 @@ namespace PingoMeter
                     value = Math.Min(value, Config.MaxPing);
                     float newValue = value * 14f / Config.MaxPing + 1f;
 
-                    g.DrawLine(Config.BgColor, 15, 15, 15, 1);
+                    if (Config.BgColor != null)
+                        g.DrawLine(Config.BgColor, 15, 15, 15, 1);
 
-                    g.DrawLine(lineColor, 15, 15, 15, 15 - newValue);
+                    if (lineColor != null)
+                        g.DrawLine(lineColor, 15, 15, 15, 15 - newValue);
                     g.DrawImage(drawable, -1f, 0f);
                     g.DrawRectangle(Pens.Black, 0, 0, 15, 15);
                     SetIcon();
@@ -433,13 +440,13 @@ namespace PingoMeter
         }
 
         // Event Handlers
-        private void MenuExitClick(object sender, EventArgs e)
+        private void MenuExitClick(object? sender, EventArgs e)
         {
             notifyIcon.Visible = false;
             Application.Exit();
         }
 
-        private void MenuSetting(object sender, EventArgs e)
+        private void MenuSetting(object? sender, EventArgs e)
         {
             var dlgResult = new Setting().ShowDialog();
 

@@ -12,7 +12,7 @@ namespace PingoMeter
     public partial class Setting : Form
     {
         bool loaded;
-        SoundPlayer testPlay;
+        SoundPlayer? testPlay;
 
         public Setting()
         {
@@ -54,9 +54,9 @@ namespace PingoMeter
                 alarmTimeOut: alarmTimeOut.Checked,
                 alarmResumed: alarmResumed.Checked,
                 useNumbers: numbersModeCheckBox.Checked,
-                _SFXConnectionLost: toolTip1.GetToolTip(connectionLostSFXBtn),
-                _SFXTimeOut: toolTip1.GetToolTip(pingTimeoutSFXBtn),
-                _SFXResumed: toolTip1.GetToolTip(connectionResumeSFXBtn),
+                _SFXConnectionLost: toolTip1.GetToolTip(connectionLostSFXBtn) ?? Config.NONE_SFX,
+                _SFXTimeOut: toolTip1.GetToolTip(pingTimeoutSFXBtn) ?? Config.NONE_SFX,
+                _SFXResumed: toolTip1.GetToolTip(connectionResumeSFXBtn) ?? Config.NONE_SFX,
                 offlineCounter: cbOfflineCounter.Checked);
         }
 
@@ -65,10 +65,14 @@ namespace PingoMeter
             delay.Value = Config.Delay;
             maxPing.Value = Config.MaxPing;
 
-            setBgColor.BackColor = Config.BgColor.Color;
-            setGoodColor.BackColor = Config.GoodColor.Color;
-            setNormalColor.BackColor = Config.NormalColor.Color;
-            setBadColor.BackColor = Config.BadColor.Color;
+            if (Config.BgColor != null)
+                setBgColor.BackColor = Config.BgColor.Color;
+            if (Config.GoodColor != null)
+                setGoodColor.BackColor = Config.GoodColor.Color;
+            if (Config.NormalColor != null)
+                setNormalColor.BackColor = Config.NormalColor.Color;
+            if (Config.BadColor != null)
+                setBadColor.BackColor = Config.BadColor.Color;
 
             alarmTimeOut.Checked = Config.AlarmTimeOut;
             alarmConnectionLost.Checked = Config.AlarmConnectionLost;
@@ -93,8 +97,11 @@ namespace PingoMeter
                 SetSoundInfoForButtom(button, null);
         }
 
-        private void SetSoundInfoForButtom(Button button, string pathToFile)
+        private void SetSoundInfoForButtom(Button? button, string? pathToFile)
         {
+            if (button == null)
+                return;
+
             if (string.IsNullOrWhiteSpace(pathToFile) || pathToFile == Config.NONE_SFX || !File.Exists(pathToFile))
             {
                 button.Text = Config.NONE_SFX;
@@ -130,7 +137,7 @@ namespace PingoMeter
             }
         }
 
-        private void SelectWAV(object senderAsButton, EventArgs e)
+        private void SelectWAV(object? senderAsButton, EventArgs e)
         {
             var dialog = new OpenFileDialog
             {
@@ -149,7 +156,7 @@ namespace PingoMeter
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
-                SetSoundInfoForButtom((Button)senderAsButton, dialog.FileName);
+                SetSoundInfoForButtom(senderAsButton as Button, dialog.FileName);
             }
 
             dialog.Dispose();
@@ -190,7 +197,7 @@ namespace PingoMeter
         private void Apply_Click(object sender, EventArgs e)
         {
             // check ip address
-            if (!IPAddress.TryParse(ipAddress.Text, out IPAddress address))
+            if (!IPAddress.TryParse(ipAddress.Text, out IPAddress? address) || address == null)
             {
                 MessageBox.Show("IP Address is invalid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;

@@ -150,7 +150,7 @@ namespace PingoMeter
 
                             case "ipaddress":
                             case nameof(TheIPAddress):
-                                if (IPAddress.TryParse(split[1], out IPAddress ip))
+                                if (IPAddress.TryParse(split[1], out IPAddress? ip) && ip != null)
                                     TheIPAddress = ip;
                                 break;
 

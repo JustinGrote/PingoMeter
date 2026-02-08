@@ -3,10 +3,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Media;
 using System.Net;
+using System.Runtime.Versioning;
 using System.Windows.Forms;
 
 namespace PingoMeter
 {
+    [SupportedOSPlatform("windows")]
     public partial class Setting : Form
     {
         bool loaded;

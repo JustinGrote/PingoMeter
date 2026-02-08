@@ -1,10 +1,12 @@
 ﻿using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace PingoMeter
 {
+    [SupportedOSPlatform("windows")]
     internal static class Config
     {
 
@@ -16,23 +18,23 @@ namespace PingoMeter
         public static int MaxPing;
         public static bool OfflineCounter = true;
 
-        public static Pen BgColor;
-        public static Pen GoodColor;
-        public static Pen NormalColor;
-        public static Pen BadColor;
+        public static Pen? BgColor;
+        public static Pen? GoodColor;
+        public static Pen? NormalColor;
+        public static Pen? BadColor;
 
         public static bool RunOnStartup;
 
-        private static string ipName;
-        private static IPAddress ipAddress;
+        private static string ipName = string.Empty;
+        private static IPAddress? ipAddress;
 
-        public static IPAddress TheIPAddress
+        public static IPAddress? TheIPAddress
         {
             get => ipAddress;
             set
             {
                 ipAddress = value;
-                ipName = value.ToString();
+                ipName = value?.ToString() ?? string.Empty;
             }
         }
 
@@ -44,9 +46,9 @@ namespace PingoMeter
 
         // sound effects path to .wav (or "(none)")
         public const string NONE_SFX = "(none)";
-        public static string SFXConnectionLost;
-        public static string SFXTimeOut;
-        public static string SFXResumed;
+        public static string SFXConnectionLost = NONE_SFX;
+        public static string SFXTimeOut = NONE_SFX;
+        public static string SFXResumed = NONE_SFX;
 
         /// <summary> Use numbers for the ping instead of a graph. </summary>
         public static bool UseNumbers;
@@ -193,7 +195,7 @@ namespace PingoMeter
             }
         }
 
-        private static void SetPenFromString(ref Pen pen, string str)
+        private static void SetPenFromString(ref Pen? pen, string str)
         {
             if (str.IndexOf(':') != -1)
             {
@@ -210,20 +212,25 @@ namespace PingoMeter
 
         public static void Save()
         {
+            if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
+            {
+                Reset();
+            }
+
             var sb = new StringBuilder();
             sb.AppendLine("# PingoMeter config file");
 
             sb.AppendLine($"{nameof(Delay)} {Delay}");
             sb.AppendLine($"{nameof(MaxPing)} {MaxPing}");
 
-            sb.AppendLine($"{nameof(BgColor)} {BgColor.Color.R}:{BgColor.Color.G}:{BgColor.Color.B}");
-            sb.AppendLine($"{nameof(GoodColor)} {GoodColor.Color.R}:{GoodColor.Color.G}:{GoodColor.Color.B}");
-            sb.AppendLine($"{nameof(NormalColor)} {NormalColor.Color.R}:{NormalColor.Color.G}:{NormalColor.Color.B}");
-            sb.AppendLine($"{nameof(BadColor)} {BadColor.Color.R}:{BadColor.Color.G}:{BadColor.Color.B}");
+            sb.AppendLine($"{nameof(BgColor)} {BgColor!.Color.R}:{BgColor.Color.G}:{BgColor.Color.B}");
+            sb.AppendLine($"{nameof(GoodColor)} {GoodColor!.Color.R}:{GoodColor.Color.G}:{GoodColor.Color.B}");
+            sb.AppendLine($"{nameof(NormalColor)} {NormalColor!.Color.R}:{NormalColor.Color.G}:{NormalColor.Color.B}");
+            sb.AppendLine($"{nameof(BadColor)} {BadColor!.Color.R}:{BadColor.Color.G}:{BadColor.Color.B}");
 
             sb.AppendLine($"{nameof(RunOnStartup)} {RunOnStartup}");
 
-            sb.AppendLine($"{nameof(TheIPAddress)} {TheIPAddress.ToString()}");
+            sb.AppendLine($"{nameof(TheIPAddress)} {TheIPAddress!.ToString()}");
 
             sb.AppendLine($"{nameof(AlarmConnectionLost)} {AlarmConnectionLost}");
             sb.AppendLine($"{nameof(AlarmTimeOut)} {AlarmTimeOut}");

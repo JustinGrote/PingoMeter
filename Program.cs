@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.Versioning;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace PingoMeter
 {
+    [SupportedOSPlatform("windows")]
     internal static class Program
     {
         /// <summary> x.x.x program version string. </summary>
@@ -25,11 +31,16 @@ namespace PingoMeter
 
             try
             {
+                Application.SetHighDpiMode(HighDpiMode.SystemAware);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                var notificationIcon = new NotificationIcon();
+                var host = CreateHostBuilder(args).Build();
+                
+                var notificationIcon = host.Services.GetRequiredService<NotificationIcon>();
                 notificationIcon.Run();
+                
+                host.Dispose();
             }
             catch (Exception ex)
             {
@@ -37,5 +48,18 @@ namespace PingoMeter
                 Process.Start("error.txt");
             }
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    // Register application services
+                    services.AddSingleton<NotificationIcon>();
+                    services.AddLogging(logging =>
+                    {
+                        logging.AddConsole();
+                        logging.AddDebug();
+                    });
+                });
     }
 }

@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.Versioning;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,12 +35,12 @@ namespace PingoMeter
                 Application.SetCompatibleTextRenderingDefault(false);
 
                 // Build the host for dependency injection
-                using var host = CreateHostBuilder(args).Build();
-                
+                using IHost host = CreateHostBuilder(args).Build();
+
                 // Get the singleton instance and run the application
                 var notificationIcon = host.Services.GetRequiredService<NotificationIcon>();
                 notificationIcon.Run();
-                
+
                 // Dispose the singleton after the application exits
                 notificationIcon.Dispose();
             }

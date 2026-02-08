@@ -63,43 +63,43 @@ namespace PingoMeter
                                   bool alarmConnectionLost, bool alarmTimeOut, bool alarmResumed, bool useNumbers,
                                   string _SFXConnectionLost, string _SFXTimeOut, string _SFXResumed, bool offlineCounter)
         {
-            Delay               = delay;
-            MaxPing             = maxPing;
-            BgColor             = new Pen(bgColor);
-            GoodColor           = new Pen(goodColor);
-            NormalColor         = new Pen(normalColor);
-            BadColor            = new Pen(badColor);
-            RunOnStartup        = runOnStartup;
-            TheIPAddress        = address;
+            Delay = delay;
+            MaxPing = maxPing;
+            BgColor = new Pen(bgColor);
+            GoodColor = new Pen(goodColor);
+            NormalColor = new Pen(normalColor);
+            BadColor = new Pen(badColor);
+            RunOnStartup = runOnStartup;
+            TheIPAddress = address;
             AlarmConnectionLost = alarmConnectionLost;
-            AlarmTimeOut        = alarmTimeOut;
-            AlarmResumed        = alarmResumed;
-            UseNumbers          = useNumbers;
-            SFXConnectionLost   = _SFXConnectionLost;
-            SFXTimeOut          = _SFXTimeOut;
-            SFXResumed          = _SFXResumed;
-            OfflineCounter      = offlineCounter;
+            AlarmTimeOut = alarmTimeOut;
+            AlarmResumed = alarmResumed;
+            UseNumbers = useNumbers;
+            SFXConnectionLost = _SFXConnectionLost;
+            SFXTimeOut = _SFXTimeOut;
+            SFXResumed = _SFXResumed;
+            OfflineCounter = offlineCounter;
         }
 
         public static void Reset()
         {
-            Delay               = 3000;
-            MaxPing             = 250;
-            OfflineCounter      = true;
-            BgColor             = new Pen(Color.FromArgb(70, 0, 0));
-            GoodColor           = new Pen(Color.FromArgb(120, 180, 0));
-            NormalColor         = new Pen(Color.FromArgb(255, 180, 0));
-            BadColor            = new Pen(Color.FromArgb(255, 0, 0));
-            RunOnStartup        = false;
-            TheIPAddress        = IPAddress.Parse("8.8.8.8"); // google ip
+            Delay = 3000;
+            MaxPing = 250;
+            OfflineCounter = true;
+            BgColor = new Pen(Color.FromArgb(70, 0, 0));
+            GoodColor = new Pen(Color.FromArgb(120, 180, 0));
+            NormalColor = new Pen(Color.FromArgb(255, 180, 0));
+            BadColor = new Pen(Color.FromArgb(255, 0, 0));
+            RunOnStartup = false;
+            TheIPAddress = IPAddress.Parse("8.8.8.8"); // google ip
             AlarmConnectionLost = false;
-            AlarmTimeOut        = false;
-            AlarmResumed        = false;
-            UseNumbers          = false;
-            SFXConnectionLost   = NONE_SFX;
-            SFXTimeOut          = NONE_SFX;
-            SFXResumed          = NONE_SFX;
-            RunOnStartup        = false;
+            AlarmTimeOut = false;
+            AlarmResumed = false;
+            UseNumbers = false;
+            SFXConnectionLost = NONE_SFX;
+            SFXTimeOut = NONE_SFX;
+            SFXResumed = NONE_SFX;
+            RunOnStartup = false;
         }
 
         public static void Load()
@@ -217,7 +217,7 @@ namespace PingoMeter
             if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
             {
                 Reset();
-                
+
                 // After reset, these should never be null
                 if (BgColor == null || GoodColor == null || NormalColor == null || BadColor == null || TheIPAddress == null)
                 {

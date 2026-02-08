@@ -146,9 +146,13 @@ namespace PingoMeter
 						SFXResumed = NormalizeSfx(GetString(config, nameof(SFXResumed)));
 					}
 				}
-				catch
+				catch (JsonException)
 				{
-					// If config file is corrupted, just use defaults
+					// If config file has invalid JSON, use defaults
+				}
+				catch (IOException)
+				{
+					// If config file can't be read, use defaults
 				}
 			}
 		}

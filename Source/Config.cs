@@ -1,7 +1,6 @@
 using System.Net;
 using System.Runtime.Versioning;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 
 namespace PingoMeter
 {
@@ -109,58 +108,93 @@ namespace PingoMeter
 			Reset();
 			Directory.CreateDirectory(ConfigFolder);
 
-			var config = new ConfigurationBuilder()
-					.SetBasePath(ConfigFolder)
-					.AddJsonFile(ConfigFileName, optional: true, reloadOnChange: false)
-					.Build();
-
-			Delay = GetInt(config, Key(nameof(Delay)), Delay);
-			TraceTimeoutMs = GetInt(config, Key(nameof(TraceTimeoutMs)), TraceTimeoutMs);
-			MaxPing = GetInt(config, Key(nameof(MaxPing)), MaxPing);
-			OfflineCounter = GetBool(config, Key(nameof(OfflineCounter)), OfflineCounter);
-
-			SetPenFromString(ref BgColor, config[Key(nameof(BgColor))] ?? string.Empty);
-			SetPenFromString(ref GoodColor, config[Key(nameof(GoodColor))] ?? string.Empty);
-			SetPenFromString(ref NormalColor, config[Key(nameof(NormalColor))] ?? string.Empty);
-			SetPenFromString(ref BadColor, config[Key(nameof(BadColor))] ?? string.Empty);
-
-			RunOnStartup = GetBool(config, Key(nameof(RunOnStartup)), RunOnStartup);
-
-			string? ipText = config[Key(nameof(TheIPAddress))];
-			if (!string.IsNullOrWhiteSpace(ipText) && IPAddress.TryParse(ipText, out IPAddress? ip) && ip != null)
+			// Try to load config from JSON file
+			if (File.Exists(ConfigPath))
 			{
-				TheIPAddress = ip;
+				try
+				{
+					string jsonText = File.ReadAllText(ConfigPath);
+					using JsonDocument doc = JsonDocument.Parse(jsonText);
+					
+					if (doc.RootElement.TryGetProperty(ConfigSectionName, out JsonElement config))
+					{
+						Delay = GetInt(config, nameof(Delay), Delay);
+						TraceTimeoutMs = GetInt(config, nameof(TraceTimeoutMs), TraceTimeoutMs);
+						MaxPing = GetInt(config, nameof(MaxPing), MaxPing);
+						OfflineCounter = GetBool(config, nameof(OfflineCounter), OfflineCounter);
+
+						SetPenFromString(ref BgColor, GetString(config, nameof(BgColor)));
+						SetPenFromString(ref GoodColor, GetString(config, nameof(GoodColor)));
+						SetPenFromString(ref NormalColor, GetString(config, nameof(NormalColor)));
+						SetPenFromString(ref BadColor, GetString(config, nameof(BadColor)));
+
+						RunOnStartup = GetBool(config, nameof(RunOnStartup), RunOnStartup);
+
+						string? ipText = GetString(config, nameof(TheIPAddress));
+						if (!string.IsNullOrWhiteSpace(ipText) && IPAddress.TryParse(ipText, out IPAddress? ip) && ip != null)
+						{
+							TheIPAddress = ip;
+						}
+
+						AlarmConnectionLost = GetBool(config, nameof(AlarmConnectionLost), AlarmConnectionLost);
+						AlarmTimeOut = GetBool(config, nameof(AlarmTimeOut), AlarmTimeOut);
+						AlarmResumed = GetBool(config, nameof(AlarmResumed), AlarmResumed);
+						UseNumbers = GetBool(config, nameof(UseNumbers), UseNumbers);
+
+						SFXConnectionLost = NormalizeSfx(GetString(config, nameof(SFXConnectionLost)));
+						SFXTimeOut = NormalizeSfx(GetString(config, nameof(SFXTimeOut)));
+						SFXResumed = NormalizeSfx(GetString(config, nameof(SFXResumed)));
+					}
+				}
+				catch
+				{
+					// If config file is corrupted, just use defaults
+				}
+			}
+		}
+
+		private static int GetInt(JsonElement config, string key, int fallback)
+		{
+			if (config.TryGetProperty(key, out JsonElement element))
+			{
+				if (element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out int result))
+					return result;
+				
+				// Try parsing as string
+				string? str = element.GetString();
+				if (str != null && int.TryParse(str, out int parsed))
+					return parsed;
 			}
 
-			AlarmConnectionLost = GetBool(config, Key(nameof(AlarmConnectionLost)), AlarmConnectionLost);
-			AlarmTimeOut = GetBool(config, Key(nameof(AlarmTimeOut)), AlarmTimeOut);
-			AlarmResumed = GetBool(config, Key(nameof(AlarmResumed)), AlarmResumed);
-			UseNumbers = GetBool(config, Key(nameof(UseNumbers)), UseNumbers);
-
-			SFXConnectionLost = NormalizeSfx(config[Key(nameof(SFXConnectionLost))]);
-			SFXTimeOut = NormalizeSfx(config[Key(nameof(SFXTimeOut))]);
-			SFXResumed = NormalizeSfx(config[Key(nameof(SFXResumed))]);
+			return fallback;
 		}
 
-		private static int GetInt(IConfiguration config, string key, int fallback)
+		private static bool GetBool(JsonElement config, string key, bool fallback)
 		{
-			if (int.TryParse(config[key], out int result))
-				return result;
+			if (config.TryGetProperty(key, out JsonElement element))
+			{
+				if (element.ValueKind == JsonValueKind.True)
+					return true;
+				if (element.ValueKind == JsonValueKind.False)
+					return false;
+				
+				// Try parsing as string
+				string? str = element.GetString();
+				if (str != null && bool.TryParse(str, out bool parsed))
+					return parsed;
+			}
 
 			return fallback;
 		}
 
-		private static bool GetBool(IConfiguration config, string key, bool fallback)
+		private static string GetString(JsonElement config, string key)
 		{
-			if (bool.TryParse(config[key], out bool result))
-				return result;
+			if (config.TryGetProperty(key, out JsonElement element))
+			{
+				return element.GetString() ?? string.Empty;
+			}
 
-			return fallback;
-		}
-
-		private static string Key(string name)
-		{
-			return $"{ConfigSectionName}:{name}";
+			return string.Empty;
 		}
 
 		private static void SetPenFromString(ref Pen? pen, string str)

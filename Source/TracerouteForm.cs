@@ -104,8 +104,8 @@ namespace PingoMeter
 			});
 			hopGrid.Columns.Add(new DataGridViewTextBoxColumn
 			{
-				DataPropertyName = nameof(TracerouteHop.LossDisplay),
-				HeaderText = "Loss%",
+				DataPropertyName = nameof(TracerouteHop.SuccessDisplay),
+				HeaderText = "Success%",
 				Width = 70,
 				SortMode = DataGridViewColumnSortMode.NotSortable
 			});
@@ -483,14 +483,14 @@ namespace PingoMeter
 			var sb = new System.Text.StringBuilder();
 			sb.AppendLine($"Traceroute to {targetName}");
 			sb.AppendLine();
-			sb.AppendLine("Hop\tHost\t\tLoss%\tRecv/Sent\tMin\tAvg\tMax");
+			sb.AppendLine("Hop\tHost\t\tSuccess%\tRecv/Sent\tMin\tAvg\tMax");
 			sb.AppendLine(new string('-', 60));
 
 			IEnumerable<TracerouteHop> hopsToCopy = hopBinding?.ToList() ?? Enumerable.Empty<TracerouteHop>();
 			foreach (var hop in hopsToCopy)
 			{
 				string host = hop.HostDisplay;
-				sb.AppendLine($"{hop.HopNumber}\t{host}\t{hop.LossDisplay}\t{hop.RecvSentDisplay}\t{hop.MinLatency}\t{hop.AvgLatency}\t{hop.MaxLatency}");
+				sb.AppendLine($"{hop.HopNumber}\t{host}\t{hop.SuccessDisplay}\t{hop.RecvSentDisplay}\t{hop.MinLatency}\t{hop.AvgLatency}\t{hop.MaxLatency}");
 			}
 
 			Clipboard.SetText(sb.ToString());

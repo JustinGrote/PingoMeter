@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Runtime.Versioning;
 
 namespace PingoMeter
 {
@@ -41,7 +40,7 @@ namespace PingoMeter
 		private int packetsLost;
 		private long minLatency = long.MaxValue;
 		private long maxLatency;
-		private float lossPercentage;
+		private float successPercentage;
 
 		public int HopNumber { get; set; }
 		public string? HostName
@@ -117,21 +116,21 @@ namespace PingoMeter
 			}
 		}
 		public long AvgLatency => Latencies.Any() ? (long)Latencies.Average() : 0;
-		public float LossPercentage
+		public float SuccessPercentage
 		{
-			get => lossPercentage;
+			get => successPercentage;
 			set
 			{
-				if (Math.Abs(lossPercentage - value) < 0.01f)
+				if (Math.Abs(successPercentage - value) < 0.01f)
 					return;
-				lossPercentage = value;
-				OnPropertyChanged(nameof(LossPercentage));
-				OnPropertyChanged(nameof(LossDisplay));
+				successPercentage = value;
+				OnPropertyChanged(nameof(SuccessPercentage));
+				OnPropertyChanged(nameof(SuccessDisplay));
 			}
 		}
 
 		public string HostDisplay => HostName ?? (Address?.ToString() ?? "(no response)");
-		public string LossDisplay => $"{LossPercentage:F1}%";
+		public string SuccessDisplay => $"{SuccessPercentage:F1}%";
 		public string RecvSentDisplay
 		{
 			get
@@ -154,7 +153,7 @@ namespace PingoMeter
 			OnPropertyChanged(nameof(AvgDisplay));
 			OnPropertyChanged(nameof(MinDisplay));
 			OnPropertyChanged(nameof(MaxDisplay));
-			OnPropertyChanged(nameof(LossDisplay));
+			OnPropertyChanged(nameof(SuccessDisplay));
 		}
 
 		public void NotifySamplesChanged()
@@ -595,7 +594,7 @@ namespace PingoMeter
 			}
 
 			int totalProbes = hopData.Latencies.Count + hopData.PacketsLost;
-			hopData.LossPercentage = totalProbes > 0 ? ((float)hopData.PacketsLost / totalProbes) * 100f : 0;
+			hopData.SuccessPercentage = totalProbes > 0 ? ((float)hopData.Latencies.Count / totalProbes) * 100f : 0;
 			hopData.NotifyCalculatedFields();
 			hopData.NotifySamplesChanged();
 		}

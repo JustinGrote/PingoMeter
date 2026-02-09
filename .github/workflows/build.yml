@@ -31,7 +31,7 @@ jobs:
     - name: Publish project
       run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}
 
-		- name: Upload Release artifact
+    - name: Upload Release artifact
       uses: actions/upload-artifact@v4
       with:
         name: PingoMeter-${{ matrix.architecture }}

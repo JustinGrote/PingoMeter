@@ -1,0 +1,40 @@
+name: Build PingoMeter
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore dependencies
+      run: dotnet restore Source/PingoMeter.csproj
+
+    - name: Build project
+      run: dotnet build Source/PingoMeter.csproj --configuration Release --no-restore
+
+    - name: Publish project
+      run: dotnet publish Source/PingoMeter.csproj --configuration Release --no-build --output Release
+
+    - name: Upload Release artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PingoMeter
+        path: Release/
+        if-no-files-found: error

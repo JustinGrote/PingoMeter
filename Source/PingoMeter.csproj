@@ -11,8 +11,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PublishDir>..\Release\</PublishDir>
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
+    <Optimize>true</Optimize>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 

@@ -12,6 +12,8 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PublishDir>..\Release\</PublishDir>
     <Optimize>true</Optimize>
+    <!-- For github actions -->
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
 
   <ItemGroup>

@@ -11,6 +11,10 @@ jobs:
   build:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        architecture: [x64, arm64]
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -19,22 +23,17 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
-
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+        cache: true
 
     - name: Restore dependencies
-      run: dotnet restore Source/PingoMeter.csproj
-
-    - name: Build project
-      run: dotnet build Source/PingoMeter.csproj --configuration Release --no-restore
+      run: dotnet restore --locked-mode Source/PingoMeter.csproj
 
     - name: Publish project
-      run: dotnet publish Source/PingoMeter.csproj --configuration Release --no-build --output Release
+      run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}
 
-    - name: Upload Release artifact
+		- name: Upload Release artifact
       uses: actions/upload-artifact@v4
       with:
-        name: PingoMeter
-        path: Release/
+        name: PingoMeter-${{ matrix.architecture }}
+        path: Release-${{ matrix.architecture }}/
         if-no-files-found: error

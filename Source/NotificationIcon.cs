@@ -2,11 +2,9 @@
 using System.Media;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 
 namespace PingoMeter
 {
-    [SupportedOSPlatform("windows")]
     internal sealed class NotificationIcon : IDisposable
     {
         const int BALLOON_TIP_TIME_OUT = 3000;

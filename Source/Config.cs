@@ -1,23 +1,43 @@
 using System.Net;
-using System.Runtime.Versioning;
-using System.Text.Json;
+using System.Xml.Linq;
 
 namespace PingoMeter
 {
-	[SupportedOSPlatform("windows")]
+
 	internal static class Config
 	{
-		private const string ConfigFileName = "appsettings.json";
-		private const string ConfigSectionName = "PingoMeter";
+		// Default values defined in source code
+		private const int DEFAULT_INTERVAL = 1000;
+		private const int DEFAULT_TIMEOUT = 1000;
+		private const bool DEFAULT_OFFLINE_COUNTER = true;
+		private const int DEFAULT_BG_COLOR_R = 70;
+		private const int DEFAULT_BG_COLOR_G = 0;
+		private const int DEFAULT_BG_COLOR_B = 0;
+		private const int DEFAULT_GOOD_COLOR_R = 120;
+		private const int DEFAULT_GOOD_COLOR_G = 180;
+		private const int DEFAULT_GOOD_COLOR_B = 0;
+		private const int DEFAULT_NORMAL_COLOR_R = 255;
+		private const int DEFAULT_NORMAL_COLOR_G = 180;
+		private const int DEFAULT_NORMAL_COLOR_B = 0;
+		private const int DEFAULT_BAD_COLOR_R = 255;
+		private const int DEFAULT_BAD_COLOR_G = 0;
+		private const int DEFAULT_BAD_COLOR_B = 0;
+		private const bool DEFAULT_RUN_ON_STARTUP = false;
+		private const string DEFAULT_IP_ADDRESS = "1.1.1.1";
+		private const bool DEFAULT_ALARM_CONNECTION_LOST = false;
+		private const bool DEFAULT_ALARM_TIMEOUT = false;
+		private const bool DEFAULT_ALARM_RESUMED = false;
+		private const bool DEFAULT_USE_NUMBERS = false;
+
 		private static readonly string ConfigFolder = Path.Combine(
 				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
 				"PingoMeter");
-		private static readonly string ConfigPath = Path.Combine(ConfigFolder, ConfigFileName);
+		private static readonly string ConfigPath = Path.Combine(ConfigFolder, "app.config");
 
-		public static int Interval = 1000;
-		public static int Timeout = Interval;
+		public static int Interval = DEFAULT_INTERVAL;
+		public static int Timeout = DEFAULT_TIMEOUT;
 
-		public static bool OfflineCounter = true;
+		public static bool OfflineCounter = DEFAULT_OFFLINE_COUNTER;
 
 		public static Pen? BgColor;
 		public static Pen? GoodColor;
@@ -84,23 +104,22 @@ namespace PingoMeter
 
 		public static void Reset()
 		{
-			Interval = 3000;
-			Timeout = 1000;
-			OfflineCounter = true;
-			BgColor = new Pen(Color.FromArgb(70, 0, 0));
-			GoodColor = new Pen(Color.FromArgb(120, 180, 0));
-			NormalColor = new Pen(Color.FromArgb(255, 180, 0));
-			BadColor = new Pen(Color.FromArgb(255, 0, 0));
-			RunOnStartup = false;
-			TheIPAddress = IPAddress.Parse("8.8.8.8"); // google ip
-			AlarmConnectionLost = false;
-			AlarmTimeOut = false;
-			AlarmResumed = false;
-			UseNumbers = false;
+			Interval = DEFAULT_INTERVAL;
+			Timeout = DEFAULT_TIMEOUT;
+			OfflineCounter = DEFAULT_OFFLINE_COUNTER;
+			BgColor = new Pen(Color.FromArgb(DEFAULT_BG_COLOR_R, DEFAULT_BG_COLOR_G, DEFAULT_BG_COLOR_B));
+			GoodColor = new Pen(Color.FromArgb(DEFAULT_GOOD_COLOR_R, DEFAULT_GOOD_COLOR_G, DEFAULT_GOOD_COLOR_B));
+			NormalColor = new Pen(Color.FromArgb(DEFAULT_NORMAL_COLOR_R, DEFAULT_NORMAL_COLOR_G, DEFAULT_NORMAL_COLOR_B));
+			BadColor = new Pen(Color.FromArgb(DEFAULT_BAD_COLOR_R, DEFAULT_BAD_COLOR_G, DEFAULT_BAD_COLOR_B));
+			RunOnStartup = DEFAULT_RUN_ON_STARTUP;
+			TheIPAddress = IPAddress.Parse(DEFAULT_IP_ADDRESS);
+			AlarmConnectionLost = DEFAULT_ALARM_CONNECTION_LOST;
+			AlarmTimeOut = DEFAULT_ALARM_TIMEOUT;
+			AlarmResumed = DEFAULT_ALARM_RESUMED;
+			UseNumbers = DEFAULT_USE_NUMBERS;
 			SFXConnectionLost = NONE_SFX;
 			SFXTimeOut = NONE_SFX;
 			SFXResumed = NONE_SFX;
-			RunOnStartup = false;
 			ipAddressHistory.Clear();
 			if (TheIPAddress != null)
 				AddIPToHistory(TheIPAddress.ToString());
@@ -111,50 +130,50 @@ namespace PingoMeter
 			Reset();
 			Directory.CreateDirectory(ConfigFolder);
 
-			// Try to load config from JSON file
+			// Try to load config from app.config file
 			if (File.Exists(ConfigPath))
 			{
 				try
 				{
-					string jsonText = File.ReadAllText(ConfigPath);
-					using JsonDocument doc = JsonDocument.Parse(jsonText);
-
-					if (doc.RootElement.TryGetProperty(ConfigSectionName, out JsonElement config))
+					XDocument doc = XDocument.Load(ConfigPath);
+					XElement? appSettingsElement = doc.Root?.Element("appSettings");
+					if (appSettingsElement != null)
 					{
-						Interval = GetInt(config, nameof(Interval), Interval);
-						Timeout = Math.Min(GetInt(config, nameof(Timeout), Timeout), Interval);
-						OfflineCounter = GetBool(config, nameof(OfflineCounter), OfflineCounter);
+						Interval = GetInt(appSettingsElement, nameof(Interval), Interval);
+						Timeout = Math.Min(GetInt(appSettingsElement, nameof(Timeout), Timeout), Interval);
+						OfflineCounter = GetBool(appSettingsElement, nameof(OfflineCounter), OfflineCounter);
 
-						SetPenFromString(ref BgColor, GetString(config, nameof(BgColor)));
-						SetPenFromString(ref GoodColor, GetString(config, nameof(GoodColor)));
-						SetPenFromString(ref NormalColor, GetString(config, nameof(NormalColor)));
-						SetPenFromString(ref BadColor, GetString(config, nameof(BadColor)));
+						SetPenFromString(ref BgColor, GetString(appSettingsElement, nameof(BgColor)));
+						SetPenFromString(ref GoodColor, GetString(appSettingsElement, nameof(GoodColor)));
+						SetPenFromString(ref NormalColor, GetString(appSettingsElement, nameof(NormalColor)));
+						SetPenFromString(ref BadColor, GetString(appSettingsElement, nameof(BadColor)));
 
-						RunOnStartup = GetBool(config, nameof(RunOnStartup), RunOnStartup);
+						RunOnStartup = GetBool(appSettingsElement, nameof(RunOnStartup), RunOnStartup);
 
-						string? ipText = GetString(config, nameof(TheIPAddress));
+						string? ipText = GetString(appSettingsElement, nameof(TheIPAddress));
 						if (!string.IsNullOrWhiteSpace(ipText) && IPAddress.TryParse(ipText, out IPAddress? ip) && ip != null)
 						{
 							TheIPAddress = ip;
 						}
 
-						AlarmConnectionLost = GetBool(config, nameof(AlarmConnectionLost), AlarmConnectionLost);
-						AlarmTimeOut = GetBool(config, nameof(AlarmTimeOut), AlarmTimeOut);
-						AlarmResumed = GetBool(config, nameof(AlarmResumed), AlarmResumed);
-						UseNumbers = GetBool(config, nameof(UseNumbers), UseNumbers);
+						AlarmConnectionLost = GetBool(appSettingsElement, nameof(AlarmConnectionLost), AlarmConnectionLost);
+						AlarmTimeOut = GetBool(appSettingsElement, nameof(AlarmTimeOut), AlarmTimeOut);
+						AlarmResumed = GetBool(appSettingsElement, nameof(AlarmResumed), AlarmResumed);
+						UseNumbers = GetBool(appSettingsElement, nameof(UseNumbers), UseNumbers);
 
-						SFXConnectionLost = NormalizeSfx(GetString(config, nameof(SFXConnectionLost)));
-						SFXTimeOut = NormalizeSfx(GetString(config, nameof(SFXTimeOut)));
-						SFXResumed = NormalizeSfx(GetString(config, nameof(SFXResumed)));
+						SFXConnectionLost = NormalizeSfx(GetString(appSettingsElement, nameof(SFXConnectionLost)));
+						SFXTimeOut = NormalizeSfx(GetString(appSettingsElement, nameof(SFXTimeOut)));
+						SFXResumed = NormalizeSfx(GetString(appSettingsElement, nameof(SFXResumed)));
 
-						if (config.TryGetProperty(nameof(IPAddressHistory), out JsonElement historyElement) && historyElement.ValueKind == JsonValueKind.Array)
+						string? historyString = GetString(appSettingsElement, nameof(IPAddressHistory));
+						if (!string.IsNullOrWhiteSpace(historyString))
 						{
 							ipAddressHistory.Clear();
-							foreach (var item in historyElement.EnumerateArray())
+							string[] historyItems = historyString.Split('|');
+							foreach (var item in historyItems)
 							{
-								var historyItem = item.GetString();
-								if (!string.IsNullOrWhiteSpace(historyItem))
-									ipAddressHistory.Add(historyItem);
+								if (!string.IsNullOrWhiteSpace(item))
+									ipAddressHistory.Add(item);
 							}
 						}
 						else if (TheIPAddress != null)
@@ -164,56 +183,55 @@ namespace PingoMeter
 						}
 					}
 				}
-				catch (JsonException)
+				catch (Exception)
 				{
-					// If config file has invalid JSON, use defaults
-				}
-				catch (IOException)
-				{
-					// If config file can't be read, use defaults
+					// If config file has any reading errors, use defaults
 				}
 			}
 		}
 
-		private static int GetInt(JsonElement config, string key, int fallback)
+		private static int GetInt(XElement settings, string key, int fallback)
 		{
-			if (config.TryGetProperty(key, out JsonElement element))
+			string? value = settings.Elements("add")
+				.FirstOrDefault(e => (string?)e.Attribute("key") == key)
+				?.Attribute("value")
+				?.Value;
+
+			if (value != null && !string.IsNullOrWhiteSpace(value))
 			{
-				if (element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out int result))
+				if (int.TryParse(value, out int result))
 					return result;
-
-				// Try parsing as string
-				string? str = element.GetString();
-				if (str != null && int.TryParse(str, out int parsed))
-					return parsed;
 			}
 
 			return fallback;
 		}
 
-		private static bool GetBool(JsonElement config, string key, bool fallback)
+		private static bool GetBool(XElement settings, string key, bool fallback)
 		{
-			if (config.TryGetProperty(key, out JsonElement element))
-			{
-				if (element.ValueKind == JsonValueKind.True)
-					return true;
-				if (element.ValueKind == JsonValueKind.False)
-					return false;
+			string? value = settings.Elements("add")
+				.FirstOrDefault(e => (string?)e.Attribute("key") == key)
+				?.Attribute("value")
+				?.Value;
 
-				// Try parsing as string
-				string? str = element.GetString();
-				if (str != null && bool.TryParse(str, out bool parsed))
-					return parsed;
+			if (value != null && !string.IsNullOrWhiteSpace(value))
+			{
+				if (bool.TryParse(value, out bool result))
+					return result;
 			}
 
 			return fallback;
 		}
 
-		private static string GetString(JsonElement config, string key)
+		private static string GetString(XElement settings, string key)
 		{
-			if (config.TryGetProperty(key, out JsonElement element))
+			string? value = settings.Elements("add")
+				.FirstOrDefault(e => (string?)e.Attribute("key") == key)
+				?.Attribute("value")
+				?.Value;
+
+			if (value != null && !string.IsNullOrWhiteSpace(value))
 			{
-				return element.GetString() ?? string.Empty;
+				return value;
 			}
 
 			return string.Empty;
@@ -244,7 +262,7 @@ namespace PingoMeter
 
 		private static string NormalizeSfx(string? value)
 		{
-			return string.IsNullOrWhiteSpace(value) ? NONE_SFX : value;
+			return string.IsNullOrWhiteSpace(value) ? NONE_SFX : value!;
 		}
 
 		public static void AddIPToHistory(string ipAddress)
@@ -276,36 +294,62 @@ namespace PingoMeter
 
 			Directory.CreateDirectory(ConfigFolder);
 
-			var root = new Dictionary<string, object?>
+			XDocument doc;
+			if (File.Exists(ConfigPath))
 			{
-				[ConfigSectionName] = new Dictionary<string, object?>
+				doc = XDocument.Load(ConfigPath);
+			}
+			else
+			{
+				doc = new XDocument(
+					new XElement("configuration",
+						new XElement("appSettings")));
+			}
+
+			XElement? appSettingsElement = doc.Root?.Element("appSettings");
+			if (appSettingsElement == null)
+			{
+				appSettingsElement = new XElement("appSettings");
+				doc.Root?.Add(appSettingsElement);
+			}
+
+			// Helper to add or update a setting
+			void SetSetting(string key, string value)
+			{
+				XElement? existing = appSettingsElement.Elements("add")
+					.FirstOrDefault(e => (string?)e.Attribute("key") == key);
+
+				if (existing != null)
 				{
-					[nameof(Interval)] = Interval,
-					[nameof(Timeout)] = Timeout,
-					[nameof(OfflineCounter)] = OfflineCounter,
-					[nameof(BgColor)] = ColorToString(BgColor),
-					[nameof(GoodColor)] = ColorToString(GoodColor),
-					[nameof(NormalColor)] = ColorToString(NormalColor),
-					[nameof(BadColor)] = ColorToString(BadColor),
-					[nameof(RunOnStartup)] = RunOnStartup,
-					[nameof(TheIPAddress)] = TheIPAddress?.ToString() ?? string.Empty,
-					[nameof(AlarmConnectionLost)] = AlarmConnectionLost,
-					[nameof(AlarmTimeOut)] = AlarmTimeOut,
-					[nameof(AlarmResumed)] = AlarmResumed,
-					[nameof(UseNumbers)] = UseNumbers,
-					[nameof(SFXConnectionLost)] = SFXConnectionLost,
-					[nameof(SFXTimeOut)] = SFXTimeOut,
-					[nameof(SFXResumed)] = SFXResumed,
-					[nameof(IPAddressHistory)] = ipAddressHistory
+					existing.SetAttributeValue("value", value);
 				}
-			};
+				else
+				{
+					appSettingsElement.Add(new XElement("add",
+						new XAttribute("key", key),
+						new XAttribute("value", value)));
+				}
+			}
 
-			var json = JsonSerializer.Serialize(root, new JsonSerializerOptions
-			{
-				WriteIndented = true
-			});
+			SetSetting(nameof(Interval), Interval.ToString());
+			SetSetting(nameof(Timeout), Timeout.ToString());
+			SetSetting(nameof(OfflineCounter), OfflineCounter.ToString());
+			SetSetting(nameof(BgColor), ColorToString(BgColor));
+			SetSetting(nameof(GoodColor), ColorToString(GoodColor));
+			SetSetting(nameof(NormalColor), ColorToString(NormalColor));
+			SetSetting(nameof(BadColor), ColorToString(BadColor));
+			SetSetting(nameof(RunOnStartup), RunOnStartup.ToString());
+			SetSetting(nameof(TheIPAddress), TheIPAddress?.ToString() ?? string.Empty);
+			SetSetting(nameof(AlarmConnectionLost), AlarmConnectionLost.ToString());
+			SetSetting(nameof(AlarmTimeOut), AlarmTimeOut.ToString());
+			SetSetting(nameof(AlarmResumed), AlarmResumed.ToString());
+			SetSetting(nameof(UseNumbers), UseNumbers.ToString());
+			SetSetting(nameof(SFXConnectionLost), SFXConnectionLost);
+			SetSetting(nameof(SFXTimeOut), SFXTimeOut);
+			SetSetting(nameof(SFXResumed), SFXResumed);
+			SetSetting(nameof(IPAddressHistory), string.Join("|", ipAddressHistory));
 
-			File.WriteAllText(ConfigPath, json);
+			doc.Save(ConfigPath);
 		}
 	}
 }

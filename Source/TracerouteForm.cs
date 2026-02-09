@@ -1,10 +1,9 @@
 using System.ComponentModel;
 using System.Net;
-using System.Runtime.Versioning;
 
 namespace PingoMeter
 {
-	[SupportedOSPlatform("windows")]
+
 	public partial class TracerouteForm : Form
 	{
 		private const string SparklineColumnName = "History";

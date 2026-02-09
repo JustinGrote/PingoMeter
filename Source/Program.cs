@@ -1,12 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.Versioning;
-using System.Windows.Forms;
+﻿using System.Diagnostics;
 
 namespace PingoMeter
 {
-    [SupportedOSPlatform("windows")]
     internal static class Program
     {
         /// <summary> x.x.x program version string. </summary>
@@ -27,7 +22,6 @@ namespace PingoMeter
 
             try
             {
-                Application.SetHighDpiMode(HighDpiMode.SystemAware);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 

@@ -1,12 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Media;
 using System.Net;
-using System.Runtime.Versioning;
 using PingoMeter.vendor.StartupCreator;
 
 namespace PingoMeter
 {
-    [SupportedOSPlatform("windows")]
     public class Setting : Form
     {
         bool loaded;

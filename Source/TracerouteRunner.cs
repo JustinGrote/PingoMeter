@@ -21,7 +21,6 @@ namespace PingoMeter
 	/// <summary>
 	/// Represents a single hop in the traceroute path.
 	/// </summary>
-	[SupportedOSPlatform("windows")]
 	public class TracerouteHop : INotifyPropertyChanged
 	{
 		public readonly struct TracerouteProbeSample
@@ -173,7 +172,6 @@ namespace PingoMeter
 	/// Async ICMP-based traceroute runner using TTL to discover network path.
 	/// Each hop has its own refresh task for real-time updates.
 	/// </summary>
-	[SupportedOSPlatform("windows")]
 	public class TracerouteRunner : IDisposable
 	{
 		private readonly IPAddress targetAddress;

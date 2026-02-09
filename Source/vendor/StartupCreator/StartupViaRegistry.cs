@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Versioning;
-using System.Text;
-using System.Windows.Forms;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 
 // Original code: https://gist.github.com/HelBorn/2266242
 
@@ -14,7 +9,6 @@ namespace PingoMeter.vendor.StartupCreator
     /// If it fails (due to lack of privileges), it attempts HKEY_CURRENT_USER, which will only run the program
     /// on the current Windows account the user is logged into.
     /// </summary>
-    [SupportedOSPlatform("windows")]
     public class StartupViaRegistry : StartupCreator
     {
 

@@ -61,9 +61,6 @@ namespace PingoMeter
 
         StartupCreator startupManager = new StartupViaRegistry();
 
-        private DateTime lastNotifyIconClick = DateTime.MinValue;
-        private const int DOUBLE_CLICK_TIMEOUT = 300; // milliseconds
-
         public NotificationIcon()
         {
             Config.Load();
@@ -80,8 +77,8 @@ namespace PingoMeter
                 Visible = true
             };
 
-            // Hook into mouse click to detect double-clicks
-            notifyIcon.MouseClick += NotifyIcon_MouseClick;
+            // Hook into double-click to open traceroute
+            notifyIcon.MouseDoubleClick += NotifyIcon_MouseDoubleClick;
 
             SFXConnectionLost = new SoundPlayer();
             SFXTimeOut        = new SoundPlayer();
@@ -447,22 +444,13 @@ namespace PingoMeter
         }
 
         // Event Handlers
-        private void NotifyIcon_MouseClick(object? sender, MouseEventArgs e)
+        private void NotifyIcon_MouseDoubleClick(object? sender, MouseEventArgs e)
         {
-            // Detect double-click on left mouse button
-            if (e.Button != MouseButtons.Left)
-                return;
-
-            DateTime now = DateTime.Now;
-            TimeSpan elapsed = now - lastNotifyIconClick;
-
-            if (elapsed.TotalMilliseconds <= DOUBLE_CLICK_TIMEOUT)
+            // Open traceroute on double-click
+            if (e.Button == MouseButtons.Left)
             {
-                // Double-click detected
                 StartTraceroute();
             }
-
-            lastNotifyIconClick = now;
         }
 
         private void StartTraceroute()

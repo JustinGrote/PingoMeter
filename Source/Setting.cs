@@ -2,6 +2,7 @@
 using System.Media;
 using System.Net;
 using System.Runtime.Versioning;
+using PingoMeter.vendor.StartupCreator;
 
 namespace PingoMeter
 {
@@ -11,6 +12,8 @@ namespace PingoMeter
         bool loaded;
         SoundPlayer? testPlay;
         bool adjustingTimeout;
+        bool adjustingStartup;
+        readonly StartupCreator startupManager = new StartupViaRegistry();
 
         public Setting()
         {
@@ -29,12 +32,14 @@ namespace PingoMeter
 
             delay.ValueChanged += (s, e) => ValidateTimeoutAgainstInterval(showWarning: true);
             traceTimeout.ValueChanged += (s, e) => ValidateTimeoutAgainstInterval(showWarning: true);
+            cbStartupRun.CheckedChanged += CbStartupRun_CheckedChanged;
 
             if (Utils.IsWindows8Next())
             {
                 cbStartupRun.Enabled = false;
                 cbStartupRun.Visible = false;
                 Config.RunOnStartup = false;
+                cbStartupRun.Checked = false;
             }
 
             loaded = true;
@@ -213,6 +218,24 @@ namespace PingoMeter
 
             if (showWarning)
                 labelTimeoutWarning.Visible = false;
+        }
+
+        private void CbStartupRun_CheckedChanged(object? sender, EventArgs e)
+        {
+            if (!loaded || adjustingStartup)
+                return;
+
+            bool success = cbStartupRun.Checked
+                ? startupManager.RunOnStartup()
+                : startupManager.RemoveFromStartup();
+
+            if (success)
+                return;
+
+            adjustingStartup = true;
+            cbStartupRun.Checked = !cbStartupRun.Checked;
+            adjustingStartup = false;
+            MessageBox.Show("Unable to update Windows startup settings.", "Startup Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         private void Apply_Click(object sender, EventArgs e)

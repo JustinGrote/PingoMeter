@@ -3,54 +3,5 @@
   <Profiles>
     <Profile Name="(Default)" />
   </Profiles>
-  <Settings>
-    <Setting Name="Interval" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1000</Value>
-    </Setting>
-    <Setting Name="Timeout" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1000</Value>
-    </Setting>
-    <Setting Name="OfflineCounter" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">True</Value>
-    </Setting>
-    <Setting Name="BgColor" Type="System.String" Scope="User">
-      <Value Profile="(Default)">70:0:0</Value>
-    </Setting>
-    <Setting Name="GoodColor" Type="System.String" Scope="User">
-      <Value Profile="(Default)">120:180:0</Value>
-    </Setting>
-    <Setting Name="NormalColor" Type="System.String" Scope="User">
-      <Value Profile="(Default)">255:180:0</Value>
-    </Setting>
-    <Setting Name="BadColor" Type="System.String" Scope="User">
-      <Value Profile="(Default)">255:0:0</Value>
-    </Setting>
-    <Setting Name="RunOnStartup" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="TheIPAddress" Type="System.String" Scope="User">
-      <Value Profile="(Default)">1.1.1.1</Value>
-    </Setting>
-    <Setting Name="AlarmConnectionLost" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="AlarmTimeOut" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="AlarmResumed" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="UseNumbers" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="SFXConnectionLost" Type="System.String" Scope="User">
-      <Value Profile="(Default)">(none)</Value>
-    </Setting>
-    <Setting Name="SFXTimeOut" Type="System.String" Scope="User">
-      <Value Profile="(Default)">(none)</Value>
-    </Setting>
-    <Setting Name="SFXResumed" Type="System.String" Scope="User">
-      <Value Profile="(Default)">(none)</Value>
-    </Setting>
-  </Settings>
+  <Settings />
 </SettingsFile>

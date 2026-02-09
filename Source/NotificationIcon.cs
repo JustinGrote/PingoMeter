@@ -19,9 +19,7 @@ namespace PingoMeter
         NotifyIcon notifyIcon;
         ContextMenuStrip notificationMenu;
 
-        IntPtr hiconOriginal;
         Image originalImage;
-        Icon noneIcon;
         Bitmap drawable;
         Graphics g;
         Font font;
@@ -79,9 +77,7 @@ namespace PingoMeter
 
             string baseDir = AppContext.BaseDirectory ?? "";
             originalImage = Image.FromFile(System.IO.Path.Combine(baseDir, "Resources\\none.png"));
-            drawable = Properties.Resources.none;
-            hiconOriginal = Properties.Resources.none.GetHicon();
-            noneIcon = Icon.FromHandle(hiconOriginal);
+            drawable = new Bitmap(16, 16);
             g = Graphics.FromImage(drawable);
             font = new Font("Consolas", 9f, FontStyle.Bold);
             font100 = new Font("Consolas", 7f, FontStyle.Bold);;
@@ -129,15 +125,12 @@ namespace PingoMeter
 
             if (hicon != IntPtr.Zero)
                 DestroyIcon(hicon);
-            if (hiconOriginal != IntPtr.Zero)
-                DestroyIcon(hiconOriginal);
 
             g?.Dispose();
             font?.Dispose();
             font100?.Dispose();
             drawable?.Dispose();
             originalImage?.Dispose();
-            noneIcon?.Dispose();
 
             SFXConnectionLost?.Dispose();
             SFXTimeOut?.Dispose();
@@ -174,7 +167,7 @@ namespace PingoMeter
             {
                 if (!Config.OfflineCounter)
                 {
-                    notifyIcon.Icon = noneIcon;
+                    notifyIcon.Icon = null;
                 }
                 else
                 {

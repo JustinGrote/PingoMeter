@@ -570,9 +570,10 @@ namespace PingoMeter
 				hops.Add(hopData);
 			}
 
-			if (result.Address != null && hopData.Address == null)
+			if (result.Address != null && !Equals(hopData.Address, result.Address))
 			{
 				hopData.Address = result.Address;
+				hopData.HostName = null; // Clear old hostname when address changes
 				TryResolveHostName(result.Address);
 			}
 

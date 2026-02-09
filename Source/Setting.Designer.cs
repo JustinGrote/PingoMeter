@@ -44,10 +44,9 @@
             this.apply = new System.Windows.Forms.Button();
             this.reset = new System.Windows.Forms.Button();
             this.cancel = new System.Windows.Forms.Button();
-            this.label6 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
-            this.maxPing = new System.Windows.Forms.NumericUpDown();
             this.traceTimeout = new System.Windows.Forms.NumericUpDown();
+            this.labelTimeoutWarning = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
             this.ipAddress = new System.Windows.Forms.TextBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -75,7 +74,6 @@
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.cbOfflineCounter = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.delay)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.maxPing)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.traceTimeout)).BeginInit();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -94,7 +92,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(132, 15);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Update time in milisec:";
+            this.label1.Text = "Ping Interval (ms):";
             //
             // label2
             //
@@ -158,7 +156,7 @@
             this.delay.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.delay.ThousandsSeparator = true;
             this.delay.Value = new decimal(new int[] {
-            3000,
+            1000,
             0,
             0,
             0});
@@ -245,54 +243,14 @@
             this.cancel.UseVisualStyleBackColor = true;
             this.cancel.Click += new System.EventHandler(this.Cancel_Click);
             //
-            // label6
-            //
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 36);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(103, 15);
-            this.label6.TabIndex = 0;
-            this.label6.Text = "Max ping interval:";
-            //
             // label12
             //
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(6, 63);
+            this.label12.Location = new System.Drawing.Point(6, 36);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(119, 15);
             this.label12.TabIndex = 0;
-            this.label12.Text = "Trace timeout (ms):";
-            //
-            // maxPing
-            //
-            this.maxPing.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.maxPing.Font = new System.Drawing.Font("Consolas", 9F);
-            this.maxPing.Increment = new decimal(new int[] {
-            50,
-            0,
-            0,
-            0});
-            this.maxPing.Location = new System.Drawing.Point(144, 34);
-            this.maxPing.Maximum = new decimal(new int[] {
-            5000,
-            0,
-            0,
-            0});
-            this.maxPing.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.maxPing.Name = "maxPing";
-            this.maxPing.Size = new System.Drawing.Size(82, 22);
-            this.maxPing.TabIndex = 2;
-            this.maxPing.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.maxPing.ThousandsSeparator = true;
-            this.maxPing.Value = new decimal(new int[] {
-            500,
-            0,
-            0,
-            0});
+            this.label12.Text = "Timeout (ms):";
             //
             // traceTimeout
             //
@@ -303,7 +261,7 @@
             0,
             0,
             0});
-            this.traceTimeout.Location = new System.Drawing.Point(144, 61);
+            this.traceTimeout.Location = new System.Drawing.Point(144, 34);
             this.traceTimeout.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -325,14 +283,25 @@
             0,
             0});
             //
+            // labelTimeoutWarning
+            //
+            this.labelTimeoutWarning.AutoSize = true;
+            this.labelTimeoutWarning.ForeColor = System.Drawing.Color.Firebrick;
+            this.labelTimeoutWarning.Location = new System.Drawing.Point(6, 62);
+            this.labelTimeoutWarning.Name = "labelTimeoutWarning";
+            this.labelTimeoutWarning.Size = new System.Drawing.Size(231, 15);
+            this.labelTimeoutWarning.TabIndex = 4;
+            this.labelTimeoutWarning.Text = "Timeout cannot exceed interval.";
+            this.labelTimeoutWarning.Visible = false;
+            //
             // label7
             //
             this.label7.AutoSize = true;
             this.label7.Location = new System.Drawing.Point(7, 7);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(90, 15);
+            this.label7.Size = new System.Drawing.Size(99, 15);
             this.label7.TabIndex = 0;
-            this.label7.Text = "Ping IP addres:";
+            this.label7.Text = "Target IP Address:";
             //
             // ipAddress
             //
@@ -364,10 +333,9 @@
             this.tabPage1.Controls.Add(this.numbersModeCheckBox);
             this.tabPage1.Controls.Add(this.graphColorsGroupBox);
             this.tabPage1.Controls.Add(this.label1);
-            this.tabPage1.Controls.Add(this.label6);
             this.tabPage1.Controls.Add(this.label12);
+            this.tabPage1.Controls.Add(this.labelTimeoutWarning);
             this.tabPage1.Controls.Add(this.delay);
-            this.tabPage1.Controls.Add(this.maxPing);
             this.tabPage1.Controls.Add(this.traceTimeout);
             this.tabPage1.Location = new System.Drawing.Point(4, 24);
             this.tabPage1.Name = "tabPage1";
@@ -628,7 +596,6 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Setting";
             ((System.ComponentModel.ISupportInitialize)(this.delay)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.maxPing)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.traceTimeout)).EndInit();
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
@@ -664,10 +631,9 @@
         private System.Windows.Forms.Button apply;
         private System.Windows.Forms.Button reset;
         private System.Windows.Forms.Button cancel;
-        private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.NumericUpDown maxPing;
         private System.Windows.Forms.NumericUpDown traceTimeout;
+        private System.Windows.Forms.Label labelTimeoutWarning;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox ipAddress;
         private System.Windows.Forms.TabControl tabControl1;

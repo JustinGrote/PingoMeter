@@ -7,15 +7,16 @@ namespace PingoMeter
 	[SupportedOSPlatform("windows")]
 	public partial class TracerouteForm : Form
 	{
-		private const string SparklineColumnName = "Sparkline";
+		private const string SparklineColumnName = "History";
 		private const int SparklineMaxPoints = 30;
 		private const int SparklineColumnWidth = 140;
 
 		private TracerouteRunner? tracerouteRunner;
-		private readonly IPAddress targetAddress;
-		private readonly string? targetName;
+		private IPAddress targetAddress;
+		private string? targetName;
 		private DataGridView? hopGrid;
 		private Label? statusLabel;
+		private ComboBox? ipSelector;
 		private BindingList<TracerouteHop>? hopBinding;
 		private readonly HashSet<TracerouteHop> hookedHops = new();
 
@@ -23,6 +24,7 @@ namespace PingoMeter
 		{
 			this.targetAddress = targetAddress;
 			this.targetName = targetName ?? targetAddress.ToString();
+			Config.AddIPToHistory(targetAddress.ToString());
 
 			SetupUI();
 		}
@@ -139,13 +141,50 @@ namespace PingoMeter
 			hopGrid.Columns.Add(new DataGridViewTextBoxColumn
 			{
 				Name = SparklineColumnName,
-				HeaderText = "Sparkline",
+				HeaderText = "History",
 				Width = SparklineColumnWidth,
 				SortMode = DataGridViewColumnSortMode.NotSortable
 			});
 			hopGrid.CellPainting += HopGrid_CellPainting;
 
+			// Top IP selector panel
+			var topPanel = new Panel
+			{
+				Dock = DockStyle.Top,
+				Height = 50,
+				Padding = new Padding(10),
+				BackColor = Color.FromArgb(245, 245, 247),
+				BorderStyle = BorderStyle.FixedSingle
+			};
+
+			var ipLabel = new Label
+			{
+				Text = "Target IP:",
+				AutoSize = true,
+				Location = new Point(10, 15),
+				Font = new Font("Segoe UI", 9.5f)
+			};
+
+			ipSelector = new ComboBox
+			{
+				Name = "ipSelector",
+				Location = new Point(80, 12),
+				Width = 200,
+				DropDownStyle = ComboBoxStyle.DropDown,
+				Font = new Font("Segoe UI", 9.5f)
+			};
+
+			foreach (var ip in Config.IPAddressHistory)
+				ipSelector.Items.Add(ip);
+
+			ipSelector.Text = targetAddress.ToString();
+			ipSelector.KeyDown += IpSelector_KeyDown;
+
+			topPanel.Controls.Add(ipLabel);
+			topPanel.Controls.Add(ipSelector);
+
 			Controls.Add(hopGrid);
+			Controls.Add(topPanel);
 
 			// Bottom button panel
 			var buttonPanel = new Panel
@@ -166,21 +205,85 @@ namespace PingoMeter
 			};
 			copyButton.Click += (s, e) => CopyToClipboard();
 
-			var closeButton = new Button
+			var settingsButton = new Button
 			{
-				Text = "Close",
+				Text = "Settings",
 				Width = 100,
 				Height = 30,
-				Location = new Point(120, 10),
+				Location = new Point(copyButton.Right + 10, 10),
 				FlatStyle = FlatStyle.System
 			};
-			closeButton.Click += (s, e) => Close();
+			settingsButton.Click += (s, e) => ShowSettings();
 
 			buttonPanel.Controls.Add(copyButton);
-			buttonPanel.Controls.Add(closeButton);
+			buttonPanel.Controls.Add(settingsButton);
 			Controls.Add(buttonPanel);
 			Controls.Add(statusLabel);
 
+		}
+
+		private void IpSelector_KeyDown(object? sender, KeyEventArgs e)
+		{
+			if (e.KeyCode != Keys.Return)
+				return;
+
+			e.Handled = true;
+
+			if (ipSelector == null || string.IsNullOrWhiteSpace(ipSelector.Text))
+				return;
+
+			string input = ipSelector.Text.Trim();
+			IPAddress? newAddress = null;
+			string? resolvedName = input;
+
+			// Try to parse as IP address first
+			if (IPAddress.TryParse(input, out IPAddress? parsedAddress) && parsedAddress != null)
+			{
+				newAddress = parsedAddress;
+				resolvedName = input;
+			}
+			else
+			{
+				// Try to resolve as DNS name
+				try
+				{
+					var hostEntry = Dns.GetHostEntry(input);
+					if (hostEntry.AddressList.Length > 0)
+					{
+						// Use the first IPv4 address, or first address if no IPv4
+						newAddress = hostEntry.AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+							?? hostEntry.AddressList[0];
+						resolvedName = input;
+					}
+				}
+				catch
+				{
+					// DNS resolution failed
+					newAddress = null;
+				}
+			}
+
+			if (newAddress == null)
+			{
+				MessageBox.Show($"Invalid IP address or could not resolve DNS name: {input}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			if (newAddress.Equals(targetAddress))
+				return;
+
+			targetAddress = newAddress;
+			targetName = resolvedName;
+			Text = $"Traceroute - {targetName}";
+
+			Config.AddIPToHistory(newAddress.ToString());
+
+			if (!ipSelector.Items.Contains(input))
+				ipSelector.Items.Insert(0, input);
+			if (hopBinding != null)
+				hopBinding.Clear();
+
+			StartTraceroute();
 		}
 
 		protected override void OnLoad(EventArgs e)
@@ -193,7 +296,7 @@ namespace PingoMeter
 
 		private void StartTraceroute()
 		{
-			tracerouteRunner = new TracerouteRunner(targetAddress, Config.Delay, SynchronizationContext.Current);
+			tracerouteRunner = new TracerouteRunner(targetAddress, Config.Interval, SynchronizationContext.Current);
 			hopBinding = tracerouteRunner.Hops;
 			if (hopGrid != null)
 			{
@@ -287,7 +390,7 @@ namespace PingoMeter
 
 			e.PaintBackground(e.CellBounds, true);
 			var hop = hopGrid.Rows[e.RowIndex].DataBoundItem as TracerouteHop;
-			if (hop != null && hop.Samples.Count > 0)
+			if (hop != null && hop.Samples.Count > 0 && e.Graphics != null)
 			{
 				DrawSparkline(e.Graphics, hop.Samples, e.CellBounds);
 			}
@@ -310,7 +413,9 @@ namespace PingoMeter
 
 			var latencyValues = window.Where(s => !s.IsLoss).Select(s => s.Latency).ToList();
 			long maxValue = latencyValues.Count > 0 ? Math.Max(latencyValues.Max(), 1) : 1;
-			float xStep = window.Count > 1 ? (float)width / (window.Count - 1) : width;
+			int maxPoints = SparklineMaxPoints;
+			int offsetPoints = Math.Max(0, maxPoints - window.Count);
+			float xStep = maxPoints > 1 ? (float)width / (maxPoints - 1) : width;
 
 			using (var pen = new Pen(Color.FromArgb(66, 135, 245), 1.5f))
 			{
@@ -324,9 +429,9 @@ namespace PingoMeter
 
 					if (lastIndex >= 0)
 					{
-						float x1 = left + lastIndex * xStep;
+						float x1 = left + (offsetPoints + lastIndex) * xStep;
 						float y1 = top + height - (float)lastLatency / maxValue * height;
-						float x2 = left + i * xStep;
+						float x2 = left + (offsetPoints + i) * xStep;
 						float y2 = top + height - (float)sample.Latency / maxValue * height;
 
 						g.DrawLine(pen, x1, y1, x2, y2);
@@ -337,24 +442,41 @@ namespace PingoMeter
 				}
 			}
 
-			for (int i = 0; i < window.Count; i++)
+			int segmentCount = window.Count;
+			int lossStart = -1;
+			for (int i = 0; i < segmentCount; i++)
 			{
-				if (!window[i].IsLoss)
-					continue;
-
-				float x = left + i * xStep - 2f;
-				g.FillRectangle(Brushes.Red, x, top, 4f, height);
+				bool isLoss = window[i].IsLoss;
+				if (isLoss && lossStart == -1)
+					lossStart = i;
+				if (!isLoss && lossStart != -1)
+				{
+					FillLossRun(g, left, top, width, height, maxPoints, offsetPoints, lossStart, i - 1);
+					lossStart = -1;
+				}
 			}
+			if (lossStart != -1)
+				FillLossRun(g, left, top, width, height, maxPoints, offsetPoints, lossStart, segmentCount - 1);
 
 			int lastLatencyIndex = window.FindLastIndex(sample => !sample.IsLoss);
 			if (lastLatencyIndex >= 0)
 			{
 				var lastSample = window[lastLatencyIndex];
-				float lastX = left + lastLatencyIndex * xStep;
+				float lastX = left + (offsetPoints + lastLatencyIndex) * xStep;
 				float lastY = top + height - (float)lastSample.Latency / maxValue * height;
-				g.FillEllipse(Brushes.Red, lastX - 2, lastY - 2, 4, 4);
-				g.DrawEllipse(Pens.DarkRed, lastX - 2, lastY - 2, 4, 4);
+				g.FillEllipse(Brushes.LimeGreen, lastX - 2, lastY - 2, 4, 4);
+				g.DrawEllipse(Pens.DarkGreen, lastX - 2, lastY - 2, 4, 4);
 			}
+		}
+
+		private static void FillLossRun(Graphics g, int left, int top, int width, int height, int maxPoints, int offsetPoints, int startIndex, int endIndex)
+		{
+			double segmentWidth = maxPoints > 0 ? (double)width / maxPoints : width;
+			int xStart = left + (int)Math.Floor((offsetPoints + startIndex) * segmentWidth);
+			int xEnd = left + (int)Math.Ceiling((offsetPoints + endIndex + 1) * segmentWidth);
+			int clampedEnd = Math.Min(left + width, xEnd);
+			int fillWidth = Math.Max(1, clampedEnd - xStart);
+			g.FillRectangle(Brushes.Red, xStart, top, fillWidth, height);
 		}
 
 		private void CopyToClipboard()
@@ -374,6 +496,14 @@ namespace PingoMeter
 
 			Clipboard.SetText(sb.ToString());
 			MessageBox.Show("Traceroute data copied to clipboard", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+		}
+
+		private void ShowSettings()
+		{
+			using (var settingsForm = new Setting())
+			{
+				settingsForm.ShowDialog(this);
+			}
 		}
 
 		protected override void OnFormClosing(FormClosingEventArgs e)

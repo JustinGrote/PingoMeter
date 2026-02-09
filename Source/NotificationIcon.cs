@@ -1,16 +1,8 @@
-﻿using PingoMeter.vendor;
-using PingoMeter.vendor.StartupCreator;
-
-using System;
-using System.Drawing;
-using System.IO;
+﻿using PingoMeter.vendor.StartupCreator;
 using System.Media;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace PingoMeter
 {
@@ -18,6 +10,7 @@ namespace PingoMeter
     internal sealed class NotificationIcon : IDisposable
     {
         const int BALLOON_TIP_TIME_OUT = 3000;
+        private const int MaxPingScaleMs = 250;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         extern static bool DestroyIcon(IntPtr handle);
@@ -125,7 +118,7 @@ namespace PingoMeter
                 });
             }, null,
                 TimeSpan.FromMilliseconds(999),
-                TimeSpan.FromMilliseconds(Config.Delay));
+                TimeSpan.FromMilliseconds(Config.Interval));
 
             Application.Run();
         }
@@ -215,11 +208,11 @@ namespace PingoMeter
                 offlineTimer = null;
                 var pingHealth = PingHealthEnum.Bad;
 
-                if (value < Config.MaxPing / 3)
+                if (value < MaxPingScaleMs / 3)
                 {
                     pingHealth = PingHealthEnum.Good;
                 }
-                else if (value < Config.MaxPing / 2)
+                else if (value < MaxPingScaleMs / 2)
                 {
                     pingHealth = PingHealthEnum.Normal;
                 }
@@ -295,8 +288,8 @@ namespace PingoMeter
                     }
 
                     // from 1 to 15
-                    value = Math.Min(value, Config.MaxPing);
-                    float newValue = value * 14f / Config.MaxPing + 1f;
+                    value = Math.Min(value, MaxPingScaleMs);
+                    float newValue = value * 14f / MaxPingScaleMs + 1f;
 
                     if (Config.BgColor != null)
                         g.DrawLine(Config.BgColor, 15, 15, 15, 1);

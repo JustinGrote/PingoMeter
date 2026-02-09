@@ -27,22 +27,22 @@ namespace PingoMeter.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("3000")]
-        public int Delay
+        public int Interval
         {
             get
             {
-                return ((int)(this["Delay"]));
+                return ((int)(this["Interval"]));
             }
             set
             {
-                this["Delay"] = value;
+                this["Interval"] = value;
             }
         }
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1000")]
-        public int TraceTimeoutMs
+        public int Timeout
         {
             get
             {
@@ -51,21 +51,6 @@ namespace PingoMeter.Properties {
             set
             {
                 this["TraceTimeoutMs"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("250")]
-        public int MaxPing
-        {
-            get
-            {
-                return ((int)(this["MaxPing"]));
-            }
-            set
-            {
-                this["MaxPing"] = value;
             }
         }
 

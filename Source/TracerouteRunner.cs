@@ -179,7 +179,7 @@ namespace PingoMeter
 		private readonly IPAddress targetAddress;
 		private readonly int maxHops = 30;
 		private readonly int timeoutMs;
-		private readonly int refreshIntervalMs;
+		private readonly int intervalMs;
 		private readonly byte[] buffer = new byte[32];
 		private readonly object targetLock = new object();
 		private readonly object hopTasksLock = new object();
@@ -195,11 +195,11 @@ namespace PingoMeter
 
 		public event EventHandler<string>? StatusChanged;
 
-		public TracerouteRunner(IPAddress targetAddress, int? refreshIntervalMs = null, SynchronizationContext? syncContext = null)
+		public TracerouteRunner(IPAddress targetAddress, int? intervalMs = null, SynchronizationContext? syncContext = null)
 		{
 			this.targetAddress = targetAddress;
-			timeoutMs = Config.TraceTimeoutMs;
-			this.refreshIntervalMs = Math.Max(200, refreshIntervalMs ?? 1000);
+			timeoutMs = Config.Timeout;
+			this.intervalMs = Math.Max(200, intervalMs ?? Config.Interval);
 			this.syncContext = syncContext ?? SynchronizationContext.Current;
 			hops = new BindingList<TracerouteHop>();
 		}
@@ -209,6 +209,7 @@ namespace PingoMeter
 
 		/// <summary>
 		/// Start the persistent traceroute. Each hop runs in its own loop.
+		/// Sends an initial ping to estimate hop count before starting parallel traceroute.
 		/// </summary>
 		public void Start()
 		{
@@ -220,29 +221,152 @@ namespace PingoMeter
 			reachedTargetHop = null;
 
 			NotifyStatusChanged("Starting traceroute...");
-			ExecuteHopUpdate(SeedInitialHops);
+			ExecuteHopUpdate(SeedInitialPlaceholder);
+			_ = Task.Run(() => StartWithInitialPingAsync(cts.Token));
+		}
 
-			for (int hop = 1; hop <= maxHops; hop++)
+		private async Task StartWithInitialPingAsync(CancellationToken ct)
+		{
+			try
 			{
-				int hopNumber = hop;
-				var hopToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
-				lock (hopTasksLock)
+				NotifyStatusChanged("Sending initial ping to estimate hop count...");
+				var initialPing = await SendInitialPingAsync(ct);
+
+				if (ct.IsCancellationRequested)
+					return;
+
+				NotifyStatusChanged($"Estimated {initialPing.EstimatedHops} hops, starting traceroute...");
+				ExecuteHopUpdate(() => PromoteInitialHop(initialPing.Result, initialPing.EstimatedHops));
+
+				for (int hop = 1; hop <= initialPing.EstimatedHops; hop++)
 				{
-					hopCts[hopNumber] = hopToken;
-					hopTasks[hopNumber] = Task.Run(() => RunHopLoopAsync(hopNumber, hopToken.Token));
+					if (ct.IsCancellationRequested)
+						return;
+
+					int hopNumber = hop;
+					var hopToken = CancellationTokenSource.CreateLinkedTokenSource(ct);
+					lock (hopTasksLock)
+					{
+						hopCts[hopNumber] = hopToken;
+						hopTasks[hopNumber] = Task.Run(() => RunHopLoopAsync(hopNumber, hopToken.Token));
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				NotifyStatusChanged($"Error during startup: {ex.Message}");
+				var fallbackResult = new TracerouteHopResult
+				{
+					HopNumber = 0,
+					Address = null,
+					Latency = 0,
+					IsComplete = false,
+					IsTimeout = true
+				};
+
+				ExecuteHopUpdate(() => PromoteInitialHop(fallbackResult, maxHops));
+				for (int hop = 1; hop <= maxHops; hop++)
+				{
+					if (ct.IsCancellationRequested)
+						return;
+
+					int hopNumber = hop;
+					var hopToken = CancellationTokenSource.CreateLinkedTokenSource(ct);
+					lock (hopTasksLock)
+					{
+						hopCts[hopNumber] = hopToken;
+						hopTasks[hopNumber] = Task.Run(() => RunHopLoopAsync(hopNumber, hopToken.Token));
+					}
 				}
 			}
 		}
 
-		private void SeedInitialHops()
+		/// <summary>
+		/// Send a single ping to estimate the number of hops to the target.
+		/// Uses the TTL of the reply to calculate hop count and returns the ping result.
+		/// </summary>
+		private async Task<(TracerouteHopResult Result, int EstimatedHops)> SendInitialPingAsync(CancellationToken ct)
+		{
+			using var ping = new Ping();
+			// Use a high TTL to ensure the ping reaches the destination
+			PingOptions options = new PingOptions(128, false);
+			TracerouteHopResult result;
+
+			try
+			{
+				var stopwatch = Stopwatch.StartNew();
+				PingReply reply = await ping.SendPingAsync(targetAddress, timeoutMs, buffer, options);
+				stopwatch.Stop();
+
+				result = new TracerouteHopResult
+				{
+					HopNumber = 0,
+					Address = reply.Address,
+					Latency = stopwatch.ElapsedMilliseconds,
+					IsComplete = reply.Status == IPStatus.Success,
+					IsTimeout = reply.Status == IPStatus.TimedOut
+				};
+
+				if (reply.Status == IPStatus.Success && reply.Options != null)
+				{
+					// The reply TTL is the remaining TTL from the response packet
+					int replyTtl = reply.Options.Ttl;
+
+					// Estimate initial TTL from common values (64, 128, 255)
+					int estimatedInitialTtl;
+					if (replyTtl <= 64)
+						estimatedInitialTtl = 64;
+					else if (replyTtl <= 128)
+						estimatedInitialTtl = 128;
+					else
+						estimatedInitialTtl = 255;
+
+					int estimatedHops = estimatedInitialTtl - replyTtl;
+
+					// Add a small buffer (3 hops) in case our estimate is slightly off
+					// and ensure we have at least 1 hop and don't exceed maxHops
+					return (result, Math.Max(1, Math.Min(maxHops, estimatedHops + 3)));
+				}
+			}
+			catch
+			{
+				result = new TracerouteHopResult
+				{
+					HopNumber = 0,
+					Address = null,
+					Latency = 0,
+					IsComplete = false,
+					IsTimeout = true
+				};
+			}
+
+			// Default to full range if estimation fails
+			return (result, maxHops);
+		}
+
+		private void SeedInitialPlaceholder()
 		{
 			if (hops.Count > 0)
 				return;
 
-			for (int hop = 1; hop <= maxHops; hop++)
+			hops.Add(new TracerouteHop
+			{
+				HopNumber = 0,
+				HostName = "Initial ping"
+			});
+		}
+
+		private void PromoteInitialHop(TracerouteHopResult result, int hopCount)
+		{
+			hops.Clear();
+			for (int hop = 1; hop <= hopCount; hop++)
 			{
 				hops.Add(new TracerouteHop { HopNumber = hop });
 			}
+
+			var promoted = result;
+			promoted.HopNumber = hopCount;
+			ApplyHopResult(promoted);
 		}
 
 		/// <summary>
@@ -263,10 +387,16 @@ namespace PingoMeter
 				if (ShouldStopHop(hop))
 					return;
 
+				var stopwatch = Stopwatch.StartNew();
 				await RefreshHopAsync(hop, ct);
+				stopwatch.Stop();
+
+				long elapsedMs = stopwatch.ElapsedMilliseconds;
+				long remainingMs = Math.Max(0, intervalMs - elapsedMs);
+
 				try
 				{
-					await Task.Delay(refreshIntervalMs, ct);
+					await Task.Delay((int)remainingMs, ct);
 				}
 				catch (OperationCanceledException)
 				{
@@ -448,6 +578,7 @@ namespace PingoMeter
 				hopData.Address = result.Address;
 				TryResolveHostName(result.Address);
 			}
+
 
 			if (result.IsTimeout)
 			{

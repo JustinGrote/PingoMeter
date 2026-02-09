@@ -1,10 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
 using System.Media;
 using System.Net;
 using System.Runtime.Versioning;
-using System.Windows.Forms;
 
 namespace PingoMeter
 {
@@ -13,6 +10,7 @@ namespace PingoMeter
     {
         bool loaded;
         SoundPlayer? testPlay;
+        bool adjustingTimeout;
 
         public Setting()
         {
@@ -29,6 +27,9 @@ namespace PingoMeter
             connectionLostSFXBtn.MouseDown += (s, e) => ClearSFX(connectionLostSFXBtn, e);
             connectionResumeSFXBtn.MouseDown += (s, e) => ClearSFX(connectionResumeSFXBtn, e);
 
+            delay.ValueChanged += (s, e) => ValidateTimeoutAgainstInterval(showWarning: true);
+            traceTimeout.ValueChanged += (s, e) => ValidateTimeoutAgainstInterval(showWarning: true);
+
             if (Utils.IsWindows8Next())
             {
                 cbStartupRun.Enabled = false;
@@ -42,9 +43,8 @@ namespace PingoMeter
         private void SyncToConfig(IPAddress address)
         {
             Config.SetAll(
-                delay: (int)delay.Value,
-                traceTimeoutMs: (int)traceTimeout.Value,
-                maxPing: (int)maxPing.Value,
+                interval: (int)delay.Value,
+                timeout: (int)traceTimeout.Value,
                 bgColor: setBgColor.BackColor,
                 goodColor: setGoodColor.BackColor,
                 normalColor: setNormalColor.BackColor,
@@ -63,10 +63,9 @@ namespace PingoMeter
 
         private void SyncFromConfig()
         {
-            delay.Value = Config.Delay;
-            traceTimeout.Value = Config.TraceTimeoutMs;
-            maxPing.Value = Config.MaxPing;
-
+            delay.Value = Config.Interval;
+            traceTimeout.Value = Config.Timeout;
+            ValidateTimeoutAgainstInterval(showWarning: false);
             if (Config.BgColor != null)
                 setBgColor.BackColor = Config.BgColor.Color;
             if (Config.GoodColor != null)
@@ -194,6 +193,26 @@ namespace PingoMeter
             {
                 setBadColor.BackColor = colorDialog1.Color;
             }
+        }
+
+        private void ValidateTimeoutAgainstInterval(bool showWarning)
+        {
+            if (adjustingTimeout)
+                return;
+
+            if (traceTimeout.Value > delay.Value)
+            {
+                adjustingTimeout = true;
+                traceTimeout.Value = delay.Value;
+                adjustingTimeout = false;
+
+                if (showWarning)
+                    labelTimeoutWarning.Visible = true;
+                return;
+            }
+
+            if (showWarning)
+                labelTimeoutWarning.Visible = false;
         }
 
         private void Apply_Click(object sender, EventArgs e)

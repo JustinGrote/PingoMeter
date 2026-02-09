@@ -14,10 +14,9 @@ namespace PingoMeter
 				"PingoMeter");
 		private static readonly string ConfigPath = Path.Combine(ConfigFolder, ConfigFileName);
 
-		public static int Delay = 3000;
-		public static int TraceTimeoutMs = 1000;
+		public static int Interval = 1000;
+		public static int Timeout = Interval;
 
-		public static int MaxPing;
 		public static bool OfflineCounter = true;
 
 		public static Pen? BgColor;
@@ -55,16 +54,18 @@ namespace PingoMeter
 		/// <summary> Use numbers for the ping instead of a graph. </summary>
 		public static bool UseNumbers;
 
+		private static List<string> ipAddressHistory = new();
+		public static IReadOnlyList<string> IPAddressHistory => ipAddressHistory.AsReadOnly();
+
 		static Config() => Reset();
 
-		public static void SetAll(int delay, int traceTimeoutMs, int maxPing, Color bgColor, Color goodColor, Color normalColor,
-															Color badColor, bool runOnStartup, IPAddress address,
-																	bool alarmConnectionLost, bool alarmTimeOut, bool alarmResumed, bool useNumbers,
-																	string _SFXConnectionLost, string _SFXTimeOut, string _SFXResumed, bool offlineCounter)
+		public static void SetAll(int interval, int timeout, Color bgColor, Color goodColor, Color normalColor,
+																				Color badColor, bool runOnStartup, IPAddress address,
+																						bool alarmConnectionLost, bool alarmTimeOut, bool alarmResumed, bool useNumbers,
+																						string _SFXConnectionLost, string _SFXTimeOut, string _SFXResumed, bool offlineCounter)
 		{
-			Delay = delay;
-			TraceTimeoutMs = traceTimeoutMs;
-			MaxPing = maxPing;
+			Interval = interval;
+			Timeout = Math.Min(timeout, interval);
 			BgColor = new Pen(bgColor);
 			GoodColor = new Pen(goodColor);
 			NormalColor = new Pen(normalColor);
@@ -83,9 +84,8 @@ namespace PingoMeter
 
 		public static void Reset()
 		{
-			Delay = 3000;
-			TraceTimeoutMs = 1000;
-			MaxPing = 250;
+			Interval = 3000;
+			Timeout = 1000;
 			OfflineCounter = true;
 			BgColor = new Pen(Color.FromArgb(70, 0, 0));
 			GoodColor = new Pen(Color.FromArgb(120, 180, 0));
@@ -101,6 +101,9 @@ namespace PingoMeter
 			SFXTimeOut = NONE_SFX;
 			SFXResumed = NONE_SFX;
 			RunOnStartup = false;
+			ipAddressHistory.Clear();
+			if (TheIPAddress != null)
+				AddIPToHistory(TheIPAddress.ToString());
 		}
 
 		public static void Load()
@@ -115,12 +118,11 @@ namespace PingoMeter
 				{
 					string jsonText = File.ReadAllText(ConfigPath);
 					using JsonDocument doc = JsonDocument.Parse(jsonText);
-					
+
 					if (doc.RootElement.TryGetProperty(ConfigSectionName, out JsonElement config))
 					{
-						Delay = GetInt(config, nameof(Delay), Delay);
-						TraceTimeoutMs = GetInt(config, nameof(TraceTimeoutMs), TraceTimeoutMs);
-						MaxPing = GetInt(config, nameof(MaxPing), MaxPing);
+						Interval = GetInt(config, nameof(Interval), Interval);
+						Timeout = Math.Min(GetInt(config, nameof(Timeout), Timeout), Interval);
 						OfflineCounter = GetBool(config, nameof(OfflineCounter), OfflineCounter);
 
 						SetPenFromString(ref BgColor, GetString(config, nameof(BgColor)));
@@ -144,6 +146,22 @@ namespace PingoMeter
 						SFXConnectionLost = NormalizeSfx(GetString(config, nameof(SFXConnectionLost)));
 						SFXTimeOut = NormalizeSfx(GetString(config, nameof(SFXTimeOut)));
 						SFXResumed = NormalizeSfx(GetString(config, nameof(SFXResumed)));
+
+						if (config.TryGetProperty(nameof(IPAddressHistory), out JsonElement historyElement) && historyElement.ValueKind == JsonValueKind.Array)
+						{
+							ipAddressHistory.Clear();
+							foreach (var item in historyElement.EnumerateArray())
+							{
+								var historyItem = item.GetString();
+								if (!string.IsNullOrWhiteSpace(historyItem))
+									ipAddressHistory.Add(historyItem);
+							}
+						}
+						else if (TheIPAddress != null)
+						{
+							ipAddressHistory.Clear();
+							AddIPToHistory(TheIPAddress.ToString());
+						}
 					}
 				}
 				catch (JsonException)
@@ -163,7 +181,7 @@ namespace PingoMeter
 			{
 				if (element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out int result))
 					return result;
-				
+
 				// Try parsing as string
 				string? str = element.GetString();
 				if (str != null && int.TryParse(str, out int parsed))
@@ -181,7 +199,7 @@ namespace PingoMeter
 					return true;
 				if (element.ValueKind == JsonValueKind.False)
 					return false;
-				
+
 				// Try parsing as string
 				string? str = element.GetString();
 				if (str != null && bool.TryParse(str, out bool parsed))
@@ -229,6 +247,19 @@ namespace PingoMeter
 			return string.IsNullOrWhiteSpace(value) ? NONE_SFX : value;
 		}
 
+		public static void AddIPToHistory(string ipAddress)
+		{
+			if (string.IsNullOrWhiteSpace(ipAddress))
+				return;
+
+			ipAddressHistory.Remove(ipAddress);
+			ipAddressHistory.Insert(0, ipAddress);
+
+			const int maxHistory = 20;
+			if (ipAddressHistory.Count > maxHistory)
+				ipAddressHistory.RemoveRange(maxHistory, ipAddressHistory.Count - maxHistory);
+		}
+
 		public static void Save()
 		{
 			// Ensure all required fields are initialized
@@ -249,9 +280,8 @@ namespace PingoMeter
 			{
 				[ConfigSectionName] = new Dictionary<string, object?>
 				{
-					[nameof(Delay)] = Delay,
-					[nameof(TraceTimeoutMs)] = TraceTimeoutMs,
-					[nameof(MaxPing)] = MaxPing,
+					[nameof(Interval)] = Interval,
+					[nameof(Timeout)] = Timeout,
 					[nameof(OfflineCounter)] = OfflineCounter,
 					[nameof(BgColor)] = ColorToString(BgColor),
 					[nameof(GoodColor)] = ColorToString(GoodColor),
@@ -265,7 +295,8 @@ namespace PingoMeter
 					[nameof(UseNumbers)] = UseNumbers,
 					[nameof(SFXConnectionLost)] = SFXConnectionLost,
 					[nameof(SFXTimeOut)] = SFXTimeOut,
-					[nameof(SFXResumed)] = SFXResumed
+					[nameof(SFXResumed)] = SFXResumed,
+					[nameof(IPAddressHistory)] = ipAddressHistory
 				}
 			};
 

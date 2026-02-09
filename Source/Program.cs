@@ -3,9 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Windows.Forms;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace PingoMeter
 {
@@ -34,15 +31,9 @@ namespace PingoMeter
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                // Build the host for dependency injection
-                using IHost host = CreateHostBuilder(args).Build();
-
-                // Get the singleton instance and run the application
-                var notificationIcon = host.Services.GetRequiredService<NotificationIcon>();
+                // Create and run the notification icon
+                using var notificationIcon = new NotificationIcon();
                 notificationIcon.Run();
-
-                // Dispose the singleton after the application exits
-                notificationIcon.Dispose();
             }
             catch (Exception ex)
             {
@@ -50,18 +41,5 @@ namespace PingoMeter
                 Process.Start("error.txt");
             }
         }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    // Register application services
-                    services.AddSingleton<NotificationIcon>();
-                    services.AddLogging(logging =>
-                    {
-                        logging.AddConsole();
-                        logging.AddDebug();
-                    });
-                });
     }
 }

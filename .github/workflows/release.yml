@@ -49,7 +49,7 @@ jobs:
       - name: Build MSI Installer
         shell: pwsh
         run: |
-          dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:Version=$env:VERSION /p:SourceDir=Release-${{ matrix.architecture }}
+          dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:Version=$env:VERSION /p:SourceDir=$pwd\Release-${{ matrix.architecture }}
         env:
           BUILDARCH: ${{ matrix.architecture }}
 

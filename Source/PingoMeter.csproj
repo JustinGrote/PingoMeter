@@ -8,10 +8,18 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PublishDir>..\Release\</PublishDir>
     <Optimize>true</Optimize>
+
+    <!-- Assembly metadata for auto-generated AssemblyInfo -->
+    <AssemblyTitle>PingoMeter</AssemblyTitle>
+    <AssemblyDescription>PingoMeter by Justin Grote</AssemblyDescription>
+    <AssemblyCompany>github.com/JustinGrote</AssemblyCompany>
+    <AssemblyProduct>PingoMeter</AssemblyProduct>
+    <AssemblyCopyright>Copyright © Justin Grote 2026</AssemblyCopyright>
+    <AssemblyCulture></AssemblyCulture>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,6 +4,11 @@
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <PublishDir>$(MSBuildSolutionDirectory)Release\</PublishDir>
 
+    <!-- Central version specification - can be overridden with -p Version=x.x.x -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <AssemblyFileVersion>$(Version)</AssemblyFileVersion>
+
     <!-- Central package lock file -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <NuGetLockFilePath>$(MSBuildThisFileDirectory)packages.lock.json</NuGetLockFilePath>

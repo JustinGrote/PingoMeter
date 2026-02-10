@@ -1,100 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
-  <?define ProductName = "PingoMeter" ?>
-  <?define ProductVersion = "$(var.ProductVersion)" ?>
-  <?define Manufacturer = "EFLFE" ?>
-  <?define UpgradeCode = "A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D" ?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Id="PingoMeter"
+    Name="PingoMeter"
+    Version="2.0.0"
+    Manufacturer="Justin Grote github.com/JustinGrote"
+    InstallScope="perUser"
+    Compressed="yes">
 
-  <Package Name="$(ProductName)"
-           Version="$(ProductVersion)"
-           Manufacturer="$(Manufacturer)"
-           UpgradeCode="$(UpgradeCode)"
-           Language="1033"
-           Compressed="yes">
+    <Feature Id="ProductFeature" Title="PingoMeter" Level="1">
+      <ComponentRef Id="PingoMeterExeComponent" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+    </Feature>
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-
-    <MediaTemplate EmbedCab="yes" />
-
-    <!-- User interface -->
-    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
-    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
-
-    <!-- Icon for Add/Remove Programs -->
-    <Icon Id="ProductIcon" SourceFile="..\Source\Resources\op.ico" />
-    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/EFLFE/PingoMeter" />
-
-    <!-- Installation directory structure -->
-    <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="INSTALLFOLDER" Name="PingoMeter">
-        <Component Id="MainExecutable" Guid="F1A2B3C4-D5E6-4F5A-8B9C-1D2E3F4A5B6C" Bitness="always64">
-          <File Id="PingoMeterExe"
-                Source="..\Release-$(sys.BUILDARCH)\PingoMeter.exe"
-                KeyPath="yes" />
-
-          <!-- Config file -->
-          <File Id="PingoMeterConfig" Source="..\Release-$(sys.BUILDARCH)\PingoMeter.exe.config" />
-        </Component>
-
-        <!-- Shortcuts Component -->
-        <Component Id="ApplicationShortcuts" Guid="B2C3D4E5-F6A7-4B5C-8D9E-2F3A4B5C6D7E" Bitness="always64">
-          <!-- Desktop shortcut -->
-          <Shortcut Id="DesktopShortcut"
-                    Directory="DesktopFolder"
-                    Name="PingoMeter"
-                    Description="Network latency monitor"
-                    Target="[INSTALLFOLDER]PingoMeter.exe"
-                    WorkingDirectory="INSTALLFOLDER"
-                    Icon="ProductIcon" />
-          <!-- Start Menu shortcut -->
-          <Shortcut Id="StartMenuShortcut"
-                    Directory="ProgramMenuFolder"
-                    Name="PingoMeter"
-                    Description="Network latency monitor"
-                    Target="[INSTALLFOLDER]PingoMeter.exe"
-                    WorkingDirectory="INSTALLFOLDER"
-                    Icon="ProductIcon" />
-
-          <!-- Registry key to serve as KeyPath -->
-          <RegistryValue Root="HKCU"
-                         Key="Software\EFLFE\PingoMeter"
-                         Name="installed"
-                         Type="integer"
-                         Value="1"
-                         KeyPath="yes" />
-
-          <!-- Remove desktop shortcut on uninstall -->
-          <RemoveFolder Id="RemoveDesktopFolder" Directory="DesktopFolder" On="uninstall" />
-          <RemoveFolder Id="RemoveProgramMenuFolder" Directory="ProgramMenuFolder" On="uninstall" />
-        </Component>
-
-        <!-- Resources directory -->
-        <Directory Id="RESOURCESFOLDER" Name="Resources">
-          <Component Id="ResourceFiles" Guid="A9B8C7D6-E5F4-4A3B-9C8D-7E6F5A4B3C2D" Bitness="always64">
-            <File Id="NoneIcon" Source="..\Release-$(sys.BUILDARCH)\Resources\none.png" KeyPath="yes" />
-            <File Id="OpIcon" Source="..\Release-$(sys.BUILDARCH)\Resources\op.ico" />
-            <File Id="OpPng" Source="..\Release-$(sys.BUILDARCH)\Resources\op.png" />
-          </Component>
-        </Directory>
-      </Directory>
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="PingoMeter" />
     </StandardDirectory>
 
-    <!-- Reference standard directories -->
-    <StandardDirectory Id="DesktopFolder" />
-    <StandardDirectory Id="ProgramMenuFolder" />
-
-    <!-- Define features -->
-    <Feature Id="ProductFeature"
-             Title="PingoMeter"
-             Level="1"
-             Description="PingoMeter Network Latency Monitor"
-             Display="expand"
-             ConfigurableDirectory="INSTALLFOLDER">
-      <ComponentRef Id="MainExecutable" />
-      <ComponentRef Id="ApplicationShortcuts" />
-      <ComponentRef Id="ResourceFiles" />
-    </Feature>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="PingoMeter" />
+    </StandardDirectory>
   </Package>
+
+  <Fragment>
+    <ComponentGroup Id="PingoMeterFiles" Directory="INSTALLFOLDER">
+      <Component Id="PingoMeterExeComponent">
+        <File Id="PingoMeterExe" Name="PingoMeter.exe" Source="$(var.SourceDir)PingoMeter.exe" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ShortcutGroup" Directory="ApplicationProgramsFolder">
+      <Component Id="StartMenuShortcutComponent">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="PingoMeter"
+                  Target="[LocalAppDataFolder]PingoMeter\PingoMeter.exe"
+                  WorkingDirectory="LocalAppDataFolder" />
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\PingoMeter" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
 </Wix>
+

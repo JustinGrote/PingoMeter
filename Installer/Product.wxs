@@ -9,6 +9,7 @@
     Scope="perUser"
   >
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
 
     <Icon Id="Icon.exe" SourceFile="$(SourceDir)\Resources\op.ico" />
     <Property Id="ARPPRODUCTICON" Value="Icon.exe" />

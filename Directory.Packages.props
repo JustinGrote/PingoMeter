@@ -5,9 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- PingoMeter dependencies -->
-    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
-
     <!-- Installer dependencies -->
     <PackageVersion Include="WixToolset.UI.wixext" Version="6.0.2" />
   </ItemGroup>

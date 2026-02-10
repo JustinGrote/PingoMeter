@@ -15,10 +15,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="vendor\StartupCreator\StartupViaLink.cs" />
   </ItemGroup>
 

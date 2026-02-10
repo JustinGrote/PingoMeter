@@ -22,7 +22,7 @@
     <BindPath Include="..\Release-$(Architecture)" />
 
     <!-- WiX Extensions -->
-    <PackageReference Include="WixToolset.UI.wixext" Version="6.0.2" />
+    <PackageReference Include="WixToolset.UI.wixext" />
   </ItemGroup>
 
   <PropertyGroup>

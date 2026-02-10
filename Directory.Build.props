@@ -3,5 +3,12 @@
   <PropertyGroup>
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <PublishDir>$(MSBuildSolutionDirectory)Release\</PublishDir>
+
+    <!-- Central package lock file -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NuGetLockFilePath>$(MSBuildThisFileDirectory)packages.lock.json</NuGetLockFilePath>
+
+    <!-- For github actions -->
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
 </Project>

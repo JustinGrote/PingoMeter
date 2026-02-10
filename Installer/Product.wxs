@@ -10,8 +10,8 @@
   >
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 
-    <Icon Id="Icon" SourceFile="$(SourceDir)\Resources\op.ico" />
-    <Property Id="ARPPRODUCTICON" Value="Icon" />
+    <Icon Id="Icon.exe" SourceFile="$(SourceDir)\Resources\op.ico" />
+    <Property Id="ARPPRODUCTICON" Value="Icon.exe" />
     <Property Id="ALLUSERS" Secure="yes" Value="2"/>
     <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1" />
 
@@ -23,13 +23,14 @@
     </StandardDirectory>
 
     <!-- Start Menu shortcuts -->
-    <!-- <StandardDirectory Id="ProgramMenuFolder">
+    <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="ProgramMenuApplicationFolder" Name="PingoMeter" />
-    </StandardDirectory> -->
+    </StandardDirectory>
 
     <ComponentGroup Id="PingoMeterFiles" Directory="ApplicationFolder">
       <Component Id="PingoMeterExecutable" Guid="*">
         <File Id="PingoMeterExe" Source="$(SourceDir)\PingoMeter.exe" KeyPath="yes">
+          <Shortcut Id="PingoMeterShortcut" Directory="ProgramMenuApplicationFolder" Name="PingoMeter" Advertise="yes" Icon="Icon.exe" />
         </File>
       </Component>
       <Component Id="PingoMeterConfig" Guid="*">
@@ -45,10 +46,18 @@
       </Component>
     </ComponentGroup>
 
+    <ComponentGroup Id="Cleanup" Directory="ProgramMenuApplicationFolder">
+      <Component Id="RemoveShortcutFolder" Guid="e9fb189f-b18c-465a-b74a-0d977cb3933f">
+        <!-- Dumb workaround for only be referenced in a shortcut -->
+        <RegistryValue Root="HKCU" Key="Software\PingoMeter" Name="Installed" Value="1" Type="string" KeyPath="yes" />
+        <RemoveFolder Id="ProgramMenuApplicationFolder" On="uninstall" />
+      </Component>
+    </ComponentGroup>
 
     <Feature Id="App">
       <ComponentGroupRef Id="PingoMeterFiles" />
       <ComponentGroupRef Id="PingoMeterResources" />
+      <ComponentGroupRef Id="Cleanup" />
     </Feature>
   </Package>
 </Wix>

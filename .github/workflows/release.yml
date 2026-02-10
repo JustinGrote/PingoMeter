@@ -104,7 +104,7 @@ jobs:
           signing-account-name: jgrote
           certificate-profile-name: JustinGrote
           files-folder: ${{ github.workspace }}\Installer\bin\Release
-          files-folder-filter: *.msi
+          files-folder-filter: "*.msi"
 
       - name: Prepare release assets
         shell: pwsh

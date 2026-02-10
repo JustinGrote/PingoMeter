@@ -39,7 +39,7 @@ jobs:
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Restore dependencies
-        run: dotnet restore --locked-mode Source/PingoMeter.csproj
+        run: dotnet restore Source/PingoMeter.csproj
 
       - name: Publish project
         shell: pwsh
@@ -57,10 +57,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
-          $zipName = "PingoMeter-${{ matrix.architecture }}-$env:VERSION.zip"
-          $msiName = "PingoMeter-${{ matrix.architecture }}-$env:VERSION.msi"
+          $zipName = "PingoMeter-$env:VERSION-${{ matrix.architecture }}.zip"
+          $msiName = "PingoMeter-$env:VERSION-${{ matrix.architecture }}.msi"
           Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
-          Get-ChildItem -Path "artifacts\installer\Release\${{ matrix.architecture }}\*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
+          Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
 
       - name: Upload assets to release
         uses: softprops/action-gh-release@v2

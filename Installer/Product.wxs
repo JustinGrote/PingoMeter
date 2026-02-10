@@ -2,7 +2,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <?define ProductName = "PingoMeter" ?>
-  <?define ProductVersion = "1.0.0" ?>
+  <?define ProductVersion = "$(var.ProductVersion)" ?>
   <?define Manufacturer = "EFLFE" ?>
   <?define UpgradeCode = "A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D" ?>
 

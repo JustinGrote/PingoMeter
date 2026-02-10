@@ -1,0 +1,69 @@
+name: Release Build
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build_release:
+    if: startsWith(github.event.release.tag_name, 'v')
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        architecture: [x64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          cache: true
+
+      - name: Set version from tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          if (-not $tag.StartsWith('v')) {
+            throw "Tag must start with v."
+          }
+          $version = $tag.Substring(1)
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Restore dependencies
+        run: dotnet restore --locked-mode Source/PingoMeter.csproj
+
+      - name: Publish project
+        shell: pwsh
+        run: |
+          dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }} /p:Version=$env:VERSION /p:AssemblyVersion=$env:VERSION /p:FileVersion=$env:VERSION /p:InformationalVersion=$env:VERSION
+
+      - name: Build MSI Installer
+        shell: pwsh
+        run: |
+          dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:ProductVersion=$env:VERSION
+        env:
+          BUILDARCH: ${{ matrix.architecture }}
+
+      - name: Prepare release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
+          $zipName = "PingoMeter-${{ matrix.architecture }}-$env:VERSION.zip"
+          $msiName = "PingoMeter-${{ matrix.architecture }}-$env:VERSION.msi"
+          Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
+          Get-ChildItem -Path "artifacts\installer\Release\${{ matrix.architecture }}\*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ReleaseAssets/*
+          tag_name: ${{ github.event.release.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

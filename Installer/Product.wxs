@@ -8,6 +8,8 @@
     Compressed="yes"
     Scope="perUser"
   >
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
     <Icon Id="Icon" SourceFile="$(SourceDir)\Resources\op.ico" />
     <Property Id="ARPPRODUCTICON" Value="Icon" />
     <Property Id="ALLUSERS" Secure="yes" Value="2"/>

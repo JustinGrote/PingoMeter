@@ -2,7 +2,7 @@ name: Build PingoMeter
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, ci ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -25,7 +25,8 @@ jobs:
         config-name: release-drafter.yml
 
   build:
-    runs-on: ubuntu-22.04
+    # Windows is required for Wix MSI packaging
+    runs-on: windows-2022
 
     strategy:
       matrix:

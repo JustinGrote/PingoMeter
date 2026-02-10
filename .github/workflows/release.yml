@@ -10,7 +10,9 @@ permissions:
 jobs:
   build_release:
     if: startsWith(github.event.release.tag_name, 'v')
-    runs-on: windows-latest
+
+		# Windows is required for Wix MSI packaging
+    runs-on: windows-2022
 
     strategy:
       matrix:
@@ -18,10 +20,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
           cache: true

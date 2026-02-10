@@ -134,6 +134,9 @@ jobs:
     env:
       VERSION: ${{ needs.build_release.outputs.version }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
       - name: Push to Chocolatey
         run: |
           choco apikey -k ${{ secrets.CHOCOLATEY_API_KEY }} -source https://push.chocolatey.org/

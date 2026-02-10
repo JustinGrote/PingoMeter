@@ -139,7 +139,7 @@ jobs:
 
       - name: Push to Chocolatey
         run: |
-          choco apikey -k ${{ secrets.CHOCOLATEY_API_KEY }} -source https://push.chocolatey.org/
+          choco apikey -k ${{ secrets.CHOCOLATEY_API_KEY }} --source https://push.chocolatey.org/
 
           $nuspecPath = "Installer/Chocolatey/PingoMeter/pingometer.nuspec"
           $installScriptPath = "Installer/Chocolatey/PingoMeter/tools/chocolateyinstall.ps1"

@@ -25,6 +25,10 @@ namespace PingoMeter
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
+                Console.WriteLine("PingoMeter has started!");
+                Console.WriteLine("Please check the system tray for the icon.");
+                Console.WriteLine("Note: The icon may be in the additional system tray icons section.");
+
                 // Create and run the notification icon
                 using var notificationIcon = new NotificationIcon();
                 notificationIcon.Run();

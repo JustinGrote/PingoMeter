@@ -6,5 +6,6 @@
     <CleanVersion Condition="$(Version.Contains('-'))">$(Version.Substring(0, $(Version.IndexOf('-'))))</CleanVersion>
     <CleanVersion Condition="!$(Version.Contains('-'))">$(Version)</CleanVersion>
     <DefineConstants>Version=$(CleanVersion);SourceDir=$(SourceDir)</DefineConstants>
+    <OutputName>PingoMeter-$(Version)</OutputName>
   </PropertyGroup>
 </Project>

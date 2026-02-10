@@ -10,9 +10,9 @@ permissions:
 jobs:
   build_release:
     if: startsWith(github.event.release.tag_name, 'v')
-
-		# Windows is required for Wix MSI packaging
     runs-on: windows-2022
+
+    # Windows is required for Wix MSI packaging
 
     strategy:
       matrix:

@@ -3,44 +3,51 @@
   <Package
     Id="PingoMeter"
     Name="PingoMeter"
-    Version="$(var.Version)"
+    Version="$(Version)"
     Manufacturer="Justin Grote github.com/JustinGrote"
-    InstallScope="perUser"
-    Compressed="yes">
+    Compressed="yes"
+    Scope="perUser"
+  >
+    <Icon Id="Icon" SourceFile="$(SourceDir)\Resources\op.ico" />
+    <Property Id="ARPPRODUCTICON" Value="Icon" />
+    <Property Id="ALLUSERS" Secure="yes" Value="2"/>
+    <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1" />
 
-    <Feature Id="ProductFeature" Title="PingoMeter" Level="1">
-      <ComponentRef Id="PingoMeterExeComponent" />
-      <ComponentRef Id="StartMenuShortcutComponent" />
+    <!-- Install into the user's LocalAppDataFolder -->
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="ApplicationFolder" Name="PingoMeter">
+        <Directory Id="ResourcesFolder" Name="Resources" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Start Menu shortcuts -->
+    <!-- <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ProgramMenuApplicationFolder" Name="PingoMeter" />
+    </StandardDirectory> -->
+
+    <ComponentGroup Id="PingoMeterFiles" Directory="ApplicationFolder">
+      <Component Id="PingoMeterExecutable" Guid="*">
+        <File Id="PingoMeterExe" Source="$(SourceDir)\PingoMeter.exe" KeyPath="yes">
+        </File>
+      </Component>
+      <Component Id="PingoMeterConfig" Guid="*">
+        <File Id="PingoMeterConfigFile" Source="$(SourceDir)\pingometer.exe.config" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="PingoMeterResources" Directory="ResourcesFolder">
+      <Component Id="PingoMeterResource1" Guid="e9fb189f-b18c-465a-b74a-0d977cb3933e">
+        <File Id="PingoMeterResourceFile1" Source="$(SourceDir)\Resources\none.png"/>
+        <File Id="PingoMeterResourceFile2" Source="$(SourceDir)\Resources\op.ico" />
+        <File Id="PingoMeterResourceFile3" Source="$(SourceDir)\Resources\op.png" />
+      </Component>
+    </ComponentGroup>
+
+
+    <Feature Id="App">
+      <ComponentGroupRef Id="PingoMeterFiles" />
+      <ComponentGroupRef Id="PingoMeterResources" />
     </Feature>
-
-    <StandardDirectory Id="LocalAppDataFolder">
-      <Directory Id="INSTALLFOLDER" Name="PingoMeter" />
-    </StandardDirectory>
-
-    <StandardDirectory Id="ProgramMenuFolder">
-      <Directory Id="ApplicationProgramsFolder" Name="PingoMeter" />
-    </StandardDirectory>
   </Package>
-
-  <Fragment>
-    <ComponentGroup Id="PingoMeterFiles" Directory="INSTALLFOLDER">
-      <Component Id="PingoMeterExeComponent">
-        <File Id="PingoMeterExe" Name="PingoMeter.exe" Source="$(var.SourceDir)PingoMeter.exe" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <Fragment>
-    <ComponentGroup Id="ShortcutGroup" Directory="ApplicationProgramsFolder">
-      <Component Id="StartMenuShortcutComponent">
-        <Shortcut Id="StartMenuShortcut"
-                  Name="PingoMeter"
-                  Target="[LocalAppDataFolder]PingoMeter\PingoMeter.exe"
-                  WorkingDirectory="LocalAppDataFolder" />
-        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
-        <RegistryValue Root="HKCU" Key="Software\PingoMeter" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
 </Wix>
 

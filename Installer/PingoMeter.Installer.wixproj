@@ -1,13 +1,10 @@
 <Project Sdk="WixToolset.Sdk/6.0.2">
   <PropertyGroup>
     <!-- Preprocessor variables that can be set during build -->
-    <Version Condition="'$(Version)' == ''">0.0.0.0-dev</Version>
     <SourceDir Condition="'$(SourceDir)' == ''">../Release</SourceDir>
+    <!-- Strip hyphen and anything after it from version for WiX -->
+    <CleanVersion Condition="$(Version.Contains('-'))">$(Version.Substring(0, $(Version.IndexOf('-'))))</CleanVersion>
+    <CleanVersion Condition="!$(Version.Contains('-'))">$(Version)</CleanVersion>
+    <DefineConstants>Version=$(CleanVersion);SourceDir=$(SourceDir)</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Pass preprocessor variables to WiX compiler -->
-    <WixPreprocessorVariable Include="Version" Value="$(Version)" />
-    <WixPreprocessorVariable Include="SourceDir" Value="$(SourceDir)" />
-  </ItemGroup>
 </Project>

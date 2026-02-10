@@ -1,2 +1,13 @@
 <Project Sdk="WixToolset.Sdk/6.0.2">
+  <PropertyGroup>
+    <!-- Preprocessor variables that can be set during build -->
+    <Version Condition="'$(Version)' == ''">0.0.0.0-dev</Version>
+    <SourceDir Condition="'$(SourceDir)' == ''">../Release</SourceDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pass preprocessor variables to WiX compiler -->
+    <WixPreprocessorVariable Include="Version" Value="$(Version)" />
+    <WixPreprocessorVariable Include="SourceDir" Value="$(SourceDir)" />
+  </ItemGroup>
 </Project>

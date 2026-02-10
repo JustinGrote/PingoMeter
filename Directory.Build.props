@@ -6,7 +6,7 @@
 
     <!-- Central version specification - can be overridden with -p Version=x.x.x -->
     <Version>1.0.0</Version>
-    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <AssemblyVersion>$(Version.Split('-')[0])</AssemblyVersion>
     <AssemblyFileVersion>$(Version)</AssemblyFileVersion>
 
     <!-- Central package lock file -->

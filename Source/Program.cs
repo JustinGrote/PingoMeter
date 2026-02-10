@@ -1,11 +1,14 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 
 namespace PingoMeter
 {
     internal static class Program
     {
         /// <summary> x.x.x program version string. </summary>
-        public const string VERSION = "1.0.0";
+        public static string VERSION => typeof(Program).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion ?? "0.0.0-dev";
 
         [STAThread]
         public static void Main(string[] args)

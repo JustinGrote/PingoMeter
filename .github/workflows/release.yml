@@ -10,9 +10,9 @@ permissions:
 jobs:
   build_release:
     if: startsWith(github.event.release.tag_name, 'v')
-
-		# Windows is required for Wix MSI packaging
     runs-on: windows-2022
+
+    # Windows is required for Wix MSI packaging
 
     strategy:
       matrix:
@@ -44,12 +44,12 @@ jobs:
       - name: Publish project
         shell: pwsh
         run: |
-          dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }} /p:Version=$env:VERSION /p:AssemblyVersion=$env:VERSION /p:FileVersion=$env:VERSION /p:InformationalVersion=$env:VERSION
+          dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }} /p:Version=$env:VERSION
 
       - name: Build MSI Installer
         shell: pwsh
         run: |
-          dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:ProductVersion=$env:VERSION
+          dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:Version=$env:VERSION /p:SourceDir=$pwd\Release-${{ matrix.architecture }}
         env:
           BUILDARCH: ${{ matrix.architecture }}
 

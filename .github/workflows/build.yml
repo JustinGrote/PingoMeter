@@ -49,7 +49,7 @@ jobs:
       run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}
 
     - name: Build MSI Installer
-      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }}
+      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }}
       env:
         BUILDARCH: ${{ matrix.architecture }}
 
@@ -64,5 +64,5 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: PingoMeter-Installer-${{ matrix.architecture }}
-        path: artifacts/installer/Release/${{ matrix.architecture }}/*.msi
+        path: Installer/bin/Release/*.msi
         if-no-files-found: error

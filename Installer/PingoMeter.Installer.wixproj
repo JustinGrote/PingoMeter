@@ -1,32 +1,11 @@
 <Project Sdk="WixToolset.Sdk/6.0.2">
   <PropertyGroup>
-    <OutputName>PingoMeter</OutputName>
-    <OutputType>Package</OutputType>
-    <WixTargetExt>.msi</WixTargetExt>
-
-    <!-- Version from Program.cs -->
-    <ProductVersion>1.0.0</ProductVersion>
-    <ProjectGuid>{e00889b9-4d14-4900-a4f7-aaf85a1518cf}</ProjectGuid>
-
-    <!-- Platform configuration -->
-    <Platform>$(Architecture)</Platform>
-    <Platforms>x64;ARM64</Platforms>
-
-    <!-- Output configuration -->
-    <OutputPath>..\artifacts\installer\$(Configuration)\$(Platform)\</OutputPath>
-    <IntermediateOutputPath>..\artifacts\obj\installer\$(Configuration)\$(Platform)\</IntermediateOutputPath>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Reference the published application output -->
-    <BindPath Include="..\Release-$(Architecture)" />
-
-    <!-- WiX Extensions -->
-    <PackageReference Include="WixToolset.UI.wixext" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <!-- Suppress warnings about using Heat.exe (file harvesting) -->
-    <SuppressIces>ICE61</SuppressIces>
+    <!-- Preprocessor variables that can be set during build -->
+    <SourceDir Condition="'$(SourceDir)' == ''">../Release</SourceDir>
+    <!-- Strip hyphen and anything after it from version for WiX -->
+    <CleanVersion Condition="$(Version.Contains('-'))">$(Version.Substring(0, $(Version.IndexOf('-'))))</CleanVersion>
+    <CleanVersion Condition="!$(Version.Contains('-'))">$(Version)</CleanVersion>
+    <DefineConstants>Version=$(CleanVersion);SourceDir=$(SourceDir)</DefineConstants>
+    <OutputName>PingoMeter-$(Version)</OutputName>
   </PropertyGroup>
 </Project>

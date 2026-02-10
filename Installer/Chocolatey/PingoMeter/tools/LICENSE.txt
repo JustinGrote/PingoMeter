@@ -1,3 +1,5 @@
+﻿From: https://raw.githubusercontent.com/JustinGrote/PingoMeter/refs/heads/main/LICENSE.MD
+
 # MIT License
 Copyright (c) 2026 Justin Grote (github.com/JustinGrote)
 

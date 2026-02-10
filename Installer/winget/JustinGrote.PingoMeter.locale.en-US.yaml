@@ -1,0 +1,12 @@
+# Created using wingetcreate 1.10.3.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
+
+PackageIdentifier: JustinGrote.PingoMeter
+PackageVersion: 1.0.2
+PackageLocale: en-US
+Publisher: Justin Grote github.com/JustinGrote
+PackageName: PingoMeter
+License: MIT
+ShortDescription: A small portable system tray utility to monitor your ping to a destination and view a live traceroute.
+ManifestType: defaultLocale
+ManifestVersion: 1.10.0

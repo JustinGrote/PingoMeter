@@ -14,11 +14,11 @@ permissions:
 jobs:
   build:
     # Windows is required for Wix MSI packaging
-    runs-on: windows-2022
+    runs-on: windows-2025
 
     strategy:
       matrix:
-        architecture: [x64, arm64]
+        architecture: [x86, arm64]
 
     steps:
     - name: Checkout code

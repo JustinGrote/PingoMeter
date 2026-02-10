@@ -64,5 +64,5 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: PingoMeter-Installer-${{ matrix.architecture }}
-        path: artifacts/installer/Release/${{ matrix.architecture }}/*.msi
+        path: Installer/bin/Release/*.msi
         if-no-files-found: error

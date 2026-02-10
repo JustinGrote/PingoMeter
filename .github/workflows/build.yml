@@ -42,7 +42,7 @@ jobs:
         cache: true
 
     - name: Restore dependencies
-      run: dotnet restore --locked-mode Source/PingoMeter.csproj
+      run: dotnet restore Source/PingoMeter.csproj
 
     - name: Publish project
       run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}

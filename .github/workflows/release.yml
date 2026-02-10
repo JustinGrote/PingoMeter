@@ -157,6 +157,9 @@ jobs:
           }
 
           Push-Location "Installer/Chocolatey/PingoMeter"
-          & choco pack -o pingometer.nupkg
-          & choco push pingometer.nupkg --source https://push.chocolatey.org/
+          "Current dir: $pwd"
+          Get-Childitem $pwd
+          "Starting Pack"
+          & choco pack
+          & choco push --source https://push.chocolatey.org/
           Pop-Location

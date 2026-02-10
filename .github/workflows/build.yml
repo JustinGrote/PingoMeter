@@ -12,18 +12,6 @@ permissions:
   pull-requests: read
 
 jobs:
-  release_drafter:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-22.04
-
-    steps:
-    - name: Draft Release Notes for main branch pushes
-      uses: release-drafter/release-drafter@v6
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        config-name: release-drafter.yml
-
   build:
     # Windows is required for Wix MSI packaging
     runs-on: windows-2022
@@ -66,3 +54,16 @@ jobs:
         name: PingoMeter-Installer-${{ matrix.architecture }}
         path: Installer/bin/Release/*.msi
         if-no-files-found: error
+
+  release_drafter:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Draft Release Notes for main branch pushes
+      uses: release-drafter/release-drafter@v6
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        config-name: release-drafter.yml

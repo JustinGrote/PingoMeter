@@ -33,10 +33,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
         cache: true
@@ -53,14 +53,14 @@ jobs:
         BUILDARCH: ${{ matrix.architecture }}
 
     - name: Upload Release artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: PingoMeter-${{ matrix.architecture }}
         path: Release-${{ matrix.architecture }}/
         if-no-files-found: error
 
     - name: Upload MSI Installer
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: PingoMeter-Installer-${{ matrix.architecture }}
         path: artifacts/installer/Release/${{ matrix.architecture }}/*.msi

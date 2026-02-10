@@ -12,6 +12,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PublishDir>..\Release\</PublishDir>
     <Optimize>true</Optimize>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <!-- For github actions -->
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>

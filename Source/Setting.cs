@@ -90,18 +90,6 @@ namespace PingoMeter
             if (cbStartupRun != null)
                 cbStartupRun.CheckedChanged += CbStartupRun_CheckedChanged;
 
-            if (Utils.IsWindows8Next())
-            {
-                if (cbStartupRun != null)
-                {
-                    cbStartupRun.Enabled = false;
-                    cbStartupRun.Visible = false;
-                }
-                Config.RunOnStartup = false;
-                if (cbStartupRun != null)
-                    cbStartupRun.Checked = false;
-            }
-
             loaded = true;
         }
 
@@ -191,7 +179,7 @@ namespace PingoMeter
 
             cbStartupRun = new CheckBox
             {
-                Text = "Run on Windows startup",
+                Text = "Run on User Login (Startup)",
                 Location = new Point(6, 82),
                 AutoSize = true
             };
@@ -281,8 +269,8 @@ namespace PingoMeter
             };
             setBadColor.Click += SetBadColor_Click;
 
-            graphColorsGroupBox.Controls.AddRange(new Control[] { label2, setBgColor, label3, setGoodColor, label4, setNormalColor, label5, setBadColor });
-            tabPage1.Controls.AddRange(new Control[] { graphColorsGroupBox, numbersModeCheckBox, cbStartupRun, labelTimeoutWarning, traceTimeout, delay, label12, label1 });
+            graphColorsGroupBox.Controls.AddRange([label2, setBgColor, label3, setGoodColor, label4, setNormalColor, label5, setBadColor]);
+            tabPage1.Controls.AddRange([graphColorsGroupBox, numbersModeCheckBox, cbStartupRun, labelTimeoutWarning, traceTimeout, delay, label12, label1]);
 
             // Create Advanced tab
             tabPage2 = new TabPage
@@ -335,7 +323,7 @@ namespace PingoMeter
                 AutoSize = true
             };
 
-            groupBox1.Controls.AddRange(new Control[] { alarmResumed, alarmConnectionLost, alarmTimeOut });
+            groupBox1.Controls.AddRange([alarmResumed, alarmConnectionLost, alarmTimeOut]);
 
             groupBox2 = new GroupBox
             {
@@ -392,7 +380,7 @@ namespace PingoMeter
                 Font = new Font("Microsoft Sans Serif", 8F, FontStyle.Regular, GraphicsUnit.Point, 204)
             };
 
-            groupBox2.Controls.AddRange(new Control[] { label11, connectionResumeSFXBtn, label10, connectionLostSFXBtn, label8, pingTimeoutSFXBtn });
+            groupBox2.Controls.AddRange([label11, connectionResumeSFXBtn, label10, connectionLostSFXBtn, label8, pingTimeoutSFXBtn]);
 
             cbOfflineCounter = new CheckBox
             {
@@ -401,7 +389,7 @@ namespace PingoMeter
                 AutoSize = true
             };
 
-            tabPage2.Controls.AddRange(new Control[] { cbOfflineCounter, groupBox2, groupBox1, ipAddress, label7 });
+            tabPage2.Controls.AddRange([cbOfflineCounter, groupBox2, groupBox1, ipAddress, label7]);
 
             // Create About tab
             tabPage3 = new TabPage
@@ -439,10 +427,10 @@ namespace PingoMeter
             };
             linkLabel1.LinkClicked += LinkLabel1_LinkClicked;
 
-            tabPage3.Controls.AddRange(new Control[] { linkLabel1, labelVersion, label9, pictureBox1 });
+            tabPage3.Controls.AddRange([linkLabel1, labelVersion, label9, pictureBox1]);
 
             // Add tabs to tab control
-            tabControl1.Controls.AddRange(new Control[] { tabPage1, tabPage2, tabPage3 });
+            tabControl1.Controls.AddRange([tabPage1, tabPage2, tabPage3]);
 
             // Create bottom buttons
             apply = new Button
@@ -474,7 +462,7 @@ namespace PingoMeter
             reset.Click += Reset_Click;
 
             // Add controls to form
-            Controls.AddRange(new Control[] { reset, cancel, apply, tabControl1 });
+            Controls.AddRange([reset, cancel, apply, tabControl1]);
         }
 
         private void SyncToConfig(IPAddress address)

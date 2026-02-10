@@ -466,26 +466,23 @@ namespace PingoMeter
 
             if (dlgResult == DialogResult.OK)
             {
-                if (Utils.IsWindows8Next()) // bug in win8+ for startup
+                if (Config.RunOnStartup)
                 {
-                    if (Config.RunOnStartup)
+                    if (!startupManager.IsInStartup())
                     {
-                        if (!startupManager.IsInStartup())
+                        if (!startupManager.RunOnStartup())
                         {
-                            if (!startupManager.RunOnStartup())
-                            {
-                                MessageBox.Show("Adding to autorun is failed!");
-                            }
+                            MessageBox.Show("Adding to autorun is failed!");
                         }
                     }
-                    else
+                }
+                else
+                {
+                    if (startupManager.IsInStartup())
                     {
-                        if (startupManager.IsInStartup())
+                        if (!startupManager.RemoveFromStartup())
                         {
-                            if (!startupManager.RemoveFromStartup())
-                            {
-                                MessageBox.Show("Failed on disabling autorun!");
-                            }
+                            MessageBox.Show("Failed on disabling autorun!");
                         }
                     }
                 }

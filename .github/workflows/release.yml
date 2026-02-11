@@ -25,17 +25,18 @@ jobs:
 
           choco apikey -k ${{ secrets.CHOCOLATEY_API_KEY }} --source https://push.chocolatey.org/
 
-          $msiAssetUri = gh release view $tagName --json assets
+          $msiAsset = gh release view $tagName --json assets
           | ConvertFrom-Json
           | Foreach-Object assets
           | Where-Object { $_.name -like "PingoMeter-*-x86.msi" }
-          | Foreach-Object url
 
-          if (!$msiAssetUri) {
+          if (!$msiAsset) {
             Write-Error "Pingometer x86 msi asset not found for release $tagName. Does the release exist?"
             exit 1
           }
 
+          $msiAssetUri = $msiAsset.url
+          $msiHash = $msiAsset.digest -replace '^sha256:', ''
           "Found MSI asset URI: $msiAssetUri"
 
           $nuspecPath = "Installer/Chocolatey/PingoMeter/pingometer.nuspec"
@@ -44,14 +45,9 @@ jobs:
           (Get-Content $nuspecPath) -replace '__VERSION__', $VERSION | Set-Content $nuspecPath
           (Get-Content $installScriptPath) -replace '__VERSION__', $VERSION | Set-Content $installScriptPath
           "Version set to $VERSION in nuspec file and install script."
-          $tempMsiPath = "TEMP:/pingometer.msi"
 
-          Invoke-WebRequest -Uri $msiAssetUri -OutFile $tempMsiPath
-          Get-FileHash $tempMsiPath -Algorithm SHA256 | ForEach-Object {
-            $checksum = $_.Hash
-            (Get-Content $installScriptPath) -replace '__CHECKSUM__', $checksum | Set-Content $installScriptPath
-            "Checksum set to $checksum in install script."
-          }
+          (Get-Content $installScriptPath) -replace '__CHECKSUM__', $msiHash | Set-Content $installScriptPath
+          "Checksum set to $msiHash in install script."
 
           Push-Location "Installer/Chocolatey/PingoMeter"
           "Current dir: $pwd"

@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Push to Chocolatey
         run: |
-          $tagName = '${{ github.event.release.tag_name }}''
+          $tagName = '${{ github.event.release.tag_name }}'
           Write-Host "Push to Chocolatey with Release tag: $tagName, Version: $version"
 
           choco apikey -k ${{ secrets.CHOCOLATEY_API_KEY }} --source https://push.chocolatey.org/

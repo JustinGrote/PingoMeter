@@ -4,10 +4,6 @@ on:
   release:
     types: [published]
 
-permissions:
-  id-token: write
-  contents: write
-
 defaults:
   run:
     shell: pwsh
@@ -20,6 +16,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Push to Chocolatey
+        env:
+          GH_TOKEN: ${{ github.token }} # For GH CLI
         run: |
           $tagName = '${{ github.event.release.tag_name }}'
           $version = $tagName.TrimStart('v')

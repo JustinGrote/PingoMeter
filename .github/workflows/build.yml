@@ -78,7 +78,7 @@ jobs:
         files-folder-filter: exe
 
     - name: Build MSI Installer
-      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=${{ steps.version.outputs.Version}}
+      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=${{ steps.version.outputs.SemVer2}}
 
     - name: Sign PingoMeter MSI Installer
       if: github.event_name != 'pull_request'
@@ -121,8 +121,8 @@ jobs:
       if: github.event_name != 'pull_request'
       run: |
         New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
-        $zipName = "PingoMeter-${{ steps.version.outputs.Version }}-${{ matrix.architecture }}.zip"
-        $msiName = "PingoMeter-${{ steps.version.outputs.Version }}-${{ matrix.architecture }}.msi"
+        $zipName = "PingoMeter-${{ steps.version.outputs.SemVer2 }}-${{ matrix.architecture }}.zip"
+        $msiName = "PingoMeter-${{ steps.version.outputs.Semver2 }}-${{ matrix.architecture }}.msi"
         Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
 
@@ -159,9 +159,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Remove all existing assets from the release (in case of an update to an existing draft)
+          gh release view -R JustinGrote/PingoMeter v${{ needs.build.outputs.version }} --json assets --jq '.assets[].id' | xargs -I {} gh release delete-asset -R JustinGrote/PingoMeter {}
+
           # Flatten the artifact directories and upload all files
           for file in release-artifacts/release-assets-*/*; do
             if [ -f "$file" ]; then
+              echo "Uploading $file"
               gh release upload -R JustinGrote/PingoMeter v${{ needs.build.outputs.version }} "$file"
             fi
           done

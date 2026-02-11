@@ -162,6 +162,6 @@ jobs:
           # Flatten the artifact directories and upload all files
           for file in release-artifacts/release-assets-*/*; do
             if [ -f "$file" ]; then
-              gh release upload v${{ needs.build.outputs.version }} "$file"
+              gh release upload -R JustinGrote/PingoMeter v${{ needs.build.outputs.version }} "$file"
             fi
           done

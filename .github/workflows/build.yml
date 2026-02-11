@@ -117,11 +117,13 @@ jobs:
         path: Installer/bin/Release/*.msi
         if-no-files-found: error
 
-    - name: Draft Release Notes
+    - name: Draft Release
       if: github.event_name != 'pull_request'
-      uses: crs-k/release-draft@v0.6.1
+      uses: release-drafter/release-drafter@v6
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        tag: ${{ steps.version.outputs.Version }}
 
     - name: Prepare release assets
       if: github.event_name != 'pull_request'
@@ -133,10 +135,12 @@ jobs:
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
 
     - name: Upload assets to release
-      uses: softprops/action-gh-release@v2
       if: github.event_name != 'pull_request'
-      with:
-        files: ReleaseAssets/*
-        tag_name: ${{ github.ref_name }}
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: ReleaseAssets/*
+        tag_name: ${{ steps.version.outputs.Version }}
+
+

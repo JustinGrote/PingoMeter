@@ -12,9 +12,6 @@ defaults:
   run:
     shell: pwsh
 
-env:
-  VERSION: ${{ github.event.release.tag_name }}
-
 jobs:
   publish_chocolatey:
     environment: Chocolatey
@@ -22,20 +19,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
       - name: Push to Chocolatey
         run: |
+          $tagName = ${{ github.event.release.tag_name }}
+          Write-Host "Push to Chocolatey with Release tag: $tagName, Version: $version"
+
           choco apikey -k ${{ secrets.CHOCOLATEY_API_KEY }} --source https://push.chocolatey.org/
+
+          $msiAssetUri = gh release view $tagName --json assets
+          | ConvertFrom-Json
+          | Foreach-Object assets
+          | Where-Object { $_.name -like "PingoMeter-*-x86.msi" }
+          | Foreach-Object url
+
+          if (!msiAsssetUri) {
+            Write-Error "Pingometer x86 msi asset not found for release $tagName. Does the release exist?"
+            exit 1
+          }
 
           $nuspecPath = "Installer/Chocolatey/PingoMeter/pingometer.nuspec"
           $installScriptPath = "Installer/Chocolatey/PingoMeter/tools/chocolateyinstall.ps1"
-          $VERSION = $env:VERSION
+
+          $version = $tagName.TrimStart('v')
+
           (Get-Content $nuspecPath) -replace '__VERSION__', $VERSION | Set-Content $nuspecPath
           (Get-Content $installScriptPath) -replace '__VERSION__', $VERSION | Set-Content $installScriptPath
           "Version set to $VERSION in nuspec file and install script."
           $tempMsiPath = "TEMP:/pingometer.msi"
 
-          Invoke-WebRequest -OutFile $tempMsiPath -Uri "https://github.com/JustinGrote/PingoMeter/releases/download/v$VERSION/PingoMeter-$VERSION-x86.msi"
+          Invoke-WebRequest -Uri $msiAssetUri -OutFile $tempMsiPath
           Get-FileHash $tempMsiPath -Algorithm SHA256 | ForEach-Object {
             $checksum = $_.Hash
             (Get-Content $installScriptPath) -replace '__CHECKSUM__', $checksum | Set-Content $installScriptPath

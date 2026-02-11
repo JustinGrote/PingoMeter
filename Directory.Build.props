@@ -10,7 +10,7 @@
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
+    <PackageReference Include="GitVersion.MsBuild">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>

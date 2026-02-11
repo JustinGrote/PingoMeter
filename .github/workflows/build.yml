@@ -3,6 +3,7 @@ name: Build PingoMeter
 on:
   push:
     branches: [ main, ci ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -17,7 +18,7 @@ jobs:
     # Windows is required for Wix MSI packaging
     runs-on: windows-2025
     outputs:
-      version: ${{ steps.version.outputs.Version }}
+      version: ${{ steps.version.outputs.fullSemVer }}
     strategy:
       matrix:
         architecture: [x86, arm64]
@@ -25,7 +26,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0 # Deep fetch is required for Nerdbank.GitVersioning to determine version from git history
+        fetch-depth: 0 # Deep fetch is required for GitVersion
+
+    - name: Determine Version
+      id: version
+      uses: gittools/actions/gitversion/execute@v4.2.0
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
@@ -34,13 +40,6 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore Source/PingoMeter.csproj
-
-    - name: Determine Version using Nerdbank.GitVersioning
-      id: version
-      uses: dotnet/nbgv@master
-      with:
-        setCommonVars: true
-        setAllVars: true
 
     - name: Publish project
       run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}
@@ -78,7 +77,7 @@ jobs:
         files-folder-filter: exe
 
     - name: Build MSI Installer
-      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=${{ steps.version.outputs.SemVer2}}
+      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=${{ steps.version.outputs.fullSemVer }}
 
     - name: Sign PingoMeter MSI Installer
       if: github.event_name != 'pull_request'
@@ -121,8 +120,8 @@ jobs:
       if: github.event_name != 'pull_request'
       run: |
         New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
-        $zipName = "PingoMeter-${{ steps.version.outputs.SemVer2 }}-${{ matrix.architecture }}.zip"
-        $msiName = "PingoMeter-${{ steps.version.outputs.Semver2 }}-${{ matrix.architecture }}.msi"
+        $zipName = "PingoMeter-${{ steps.version.outputs.fullSemVer }}-${{ matrix.architecture }}.zip"
+        $msiName = "PingoMeter-${{ steps.version.outputs.fullSemVer }}-${{ matrix.architecture }}.msi"
         Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
 
@@ -141,31 +140,16 @@ jobs:
       VERSION: ${{ needs.build.outputs.version }}
     if: github.event_name != 'pull_request'
     steps:
-      - name: Draft Release
-        id: draft
-        uses: release-drafter/release-drafter@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: v${{ needs.build.outputs.version }}
-
       - name: Download all release assets
         uses: actions/download-artifact@v6
         with:
           path: release-artifacts
           pattern: release-assets-*
 
-      - name: Upload assets to release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Remove all existing assets from the release (in case of an update to an existing draft)
-          gh release view -R JustinGrote/PingoMeter v${{ needs.build.outputs.version }} --json assets --jq '.assets[].id' | xargs -I {} gh release delete-asset -R JustinGrote/PingoMeter {}
-
-          # Flatten the artifact directories and upload all files
-          for file in release-artifacts/release-assets-*/*; do
-            if [ -f "$file" ]; then
-              echo "Uploading $file"
-              gh release upload -R JustinGrote/PingoMeter v${{ needs.build.outputs.version }} "$file"
-            fi
-          done
+      - name: Generate Draft Release on Tag
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: release-artifacts/release-assets-*/**/*

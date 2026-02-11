@@ -16,11 +16,11 @@ jobs:
   build:
     # Windows is required for Wix MSI packaging
     runs-on: windows-2025
-
+    outputs:
+      version: ${{ steps.version.outputs.Version }}
     strategy:
       matrix:
         architecture: [x86, arm64]
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -117,30 +117,51 @@ jobs:
         path: Installer/bin/Release/*.msi
         if-no-files-found: error
 
-    - name: Draft Release
-      if: github.event_name != 'pull_request'
-      uses: release-drafter/release-drafter@v6
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag: ${{ steps.version.outputs.Version }}
-
     - name: Prepare release assets
       if: github.event_name != 'pull_request'
       run: |
         New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
-        $zipName = "PingoMeter-$env:VERSION-${{ matrix.architecture }}.zip"
-        $msiName = "PingoMeter-$env:VERSION-${{ matrix.architecture }}.msi"
+        $zipName = "PingoMeter-${{ steps.version.outputs.Version }}-${{ matrix.architecture }}.zip"
+        $msiName = "PingoMeter-${{ steps.version.outputs.Version }}-${{ matrix.architecture }}.msi"
         Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
 
-    - name: Upload assets to release
+    - name: Upload release assets
       if: github.event_name != 'pull_request'
-      uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/upload-artifact@v6
       with:
-        files: ReleaseAssets/*
-        tag_name: ${{ steps.version.outputs.Version }}
+        name: release-assets-${{ matrix.architecture }}
+        path: ReleaseAssets/
+        if-no-files-found: error
 
+  draft_release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Draft Release
+        id: draft
+        uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: v${{ needs.build.outputs.version }}
 
+      - name: Download all release assets
+        uses: actions/download-artifact@v6
+        with:
+          path: release-artifacts
+          pattern: release-assets-*
+
+      - name: Upload assets to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Flatten the artifact directories and upload all files
+          for file in release-artifacts/release-assets-*/*; do
+            if [ -f "$file" ]; then
+              gh release upload v${{ needs.build.outputs.version }} "$file"
+            fi
+          done

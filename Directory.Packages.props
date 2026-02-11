@@ -3,9 +3,11 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- Installer dependencies -->
+    <PackageVersion Include="Nerdbank.GitVersioning">
+      <Version>3.9.50</Version>
+    </PackageVersion>
     <PackageVersion Include="WixToolset.UI.wixext" Version="6.0.2" />
   </ItemGroup>
 </Project>

@@ -3,7 +3,6 @@ name: Build PingoMeter
 on:
   push:
     branches: [ main, ci ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -25,7 +24,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-
+      with:
+        fetch-depth: 0 # Deep fetch is required for Nerdbank.GitVersioning to determine version from git history
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
@@ -35,22 +35,18 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Source/PingoMeter.csproj
 
-    - name: Set Version
-      id: set_version
-      run: |
-        if ( '${{ github.ref_name }}' -like 'v*' ) {
-          $version = "${{ github.ref_name }}".Substring(1)
-        } else {
-          $version = "0.0.0-ci.${{ github.run_id }}+${{ github.sha }}"
-        }
-        "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
-        "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+    - name: Determine Version using Nerdbank.GitVersioning
+      id: version
+      uses: dotnet/nbgv@master
+      with:
+        setCommonVars: true
+        setAllVars: true
 
     - name: Publish project
-      run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }} /p:Version=$env:VERSION
+      run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}
 
-    - name: Azure login
-      if: startsWith(github.ref, 'refs/tags/v')
+    - name: Azure Login
+      if: github.event_name != 'pull_request'
       uses: azure/login@v1
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -59,7 +55,7 @@ jobs:
         enable-AzPSSession: true
 
     - name: Sign PingoMeter executable
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: github.event_name != 'pull_request'
       uses: azure/artifact-signing-action@v1
       with:
         exclude-environment-credential: true
@@ -82,10 +78,10 @@ jobs:
         files-folder-filter: exe
 
     - name: Build MSI Installer
-      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=$env:VERSION
+      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=${{ steps.version.outputs.Version}}
 
     - name: Sign PingoMeter MSI Installer
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: github.event_name != 'pull_request'
       uses: azure/artifact-signing-action@v1
       with:
         exclude-environment-credential: true
@@ -121,17 +117,14 @@ jobs:
         path: Installer/bin/Release/*.msi
         if-no-files-found: error
 
-    - name: Draft Release Notes for main branch pushes
-      if: startsWith(github.ref, 'refs/tags/v')
-
-      uses: release-drafter/release-drafter@v6
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Draft Release Notes
+      if: github.event_name != 'pull_request'
+      uses: crs-k/release-draft@v0.6.1
       with:
-        config-name: release-drafter.yml
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Prepare release assets
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: github.event_name != 'pull_request'
       run: |
         New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
         $zipName = "PingoMeter-$env:VERSION-${{ matrix.architecture }}.zip"
@@ -141,7 +134,7 @@ jobs:
 
     - name: Upload assets to release
       uses: softprops/action-gh-release@v2
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: github.event_name != 'pull_request'
       with:
         files: ReleaseAssets/*
         tag_name: ${{ github.ref_name }}

@@ -31,10 +31,12 @@ jobs:
           | Where-Object { $_.name -like "PingoMeter-*-x86.msi" }
           | Foreach-Object url
 
-          if (!$msiAsssetUri) {
+          if (!$msiAssetUri) {
             Write-Error "Pingometer x86 msi asset not found for release $tagName. Does the release exist?"
             exit 1
           }
+
+          "Found MSI asset URI: $msiAssetUri"
 
           $nuspecPath = "Installer/Chocolatey/PingoMeter/pingometer.nuspec"
           $installScriptPath = "Installer/Chocolatey/PingoMeter/tools/chocolateyinstall.ps1"

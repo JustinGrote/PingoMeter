@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: 📤 Checkout
         uses: actions/checkout@v6
-      - name: 📤 Push to Chocolatey
+      - name: 🚚 Push to Chocolatey
         env:
           GH_TOKEN: ${{ github.token }} # For GH CLI
         run: |

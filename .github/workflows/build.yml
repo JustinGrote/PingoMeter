@@ -61,19 +61,21 @@ jobs:
       id: net-restore-cache
       uses: actions/cache@v5
       with:
-        key: ${{ runner.os }}-dotnetpackages-${{ hashFiles('**/packages.lock.json') }}
+        key: |-
+          ${{ runner.os }}-${{ matrix.architecture }}-dotnetpackages
+          -${{ hashFiles('**/packages.lock.json','**/Directory.Packages.props') }}
         path: |
           artifacts
           ~/.nuget/packages
 
     - name: 📥 .NET Restore
       if: steps.net-restore-cache.outputs.cache-hit != 'true'
-      run: dotnet restore Source/PingoMeter.csproj
+      run: dotnet restore Source/PingoMeter.csproj --arch ${{ matrix.architecture }}
 
     - name: 📦 .NET Publish
       run: >
         dotnet publish Source/PingoMeter.csproj
-        /p:DebugType=None /p:DebugSymbols=false
+        /p:DebugType=None /p:DebugSymbols=false --no-restore
         --configuration Release
         --output Release-${{ matrix.architecture }}
         --arch ${{ matrix.architecture }}
@@ -168,12 +170,20 @@ jobs:
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
         Get-ChildItem "ReleaseAssets"
 
-    - name: 📤 Upload Build Artifacts
+    - name: 🚚 Upload ZIP Build Artifact
       if: github.event_name != 'pull_request'
       uses: actions/upload-artifact@v6
       with:
-        name: release-assets-${{ matrix.architecture }}
-        path: ReleaseAssets/
+        name: pingometer-${{ matrix.architecture }}-zip
+        path: ReleaseAssets/*.zip
+        if-no-files-found: error
+
+    - name: 🚚 Upload MSI Build Artifact
+      if: github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v6
+      with:
+        name: pingometer-${{ matrix.architecture }}-msi
+        path: ReleaseAssets/*.msi
         if-no-files-found: error
 
   draft_release:
@@ -186,7 +196,7 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           path: release-artifacts
-          pattern: release-assets-*
+          pattern: pingometer-*
 
       - name: 📝 Generate Draft Release
         uses: softprops/action-gh-release@v2
@@ -194,4 +204,4 @@ jobs:
           draft: true
           generate_release_notes: true
           tag_name: ${{ github.ref_name }}
-          files: release-artifacts/release-assets-*/**/*
+          files: release-artifacts/**

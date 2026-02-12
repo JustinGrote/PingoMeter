@@ -158,21 +158,7 @@ jobs:
         files-folder: ${{ github.workspace }}\Installer\bin\Release
         files-folder-filter: "*.msi"
 
-    - name: 📤 Upload Release artifact
-      uses: actions/upload-artifact@v6
-      with:
-        name: PingoMeter-${{ matrix.architecture }}
-        path: Release-${{ matrix.architecture }}/
-        if-no-files-found: error
-
-    - name: 📤 Upload MSI Installer
-      uses: actions/upload-artifact@v6
-      with:
-        name: PingoMeter-Installer-${{ matrix.architecture }}
-        path: Installer/bin/Release/*.msi
-        if-no-files-found: error
-
-    - name: 📦 Prepare release assets
+    - name: 📦 Prepare Build artifacts
       if: github.event_name != 'pull_request'
       run: |
         New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
@@ -180,8 +166,9 @@ jobs:
         $msiName = "PingoMeter-${{ steps.version.outputs.fullSemVer }}-${{ matrix.architecture }}.msi"
         Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
+        Get-ChildItem "ReleaseAssets"
 
-    - name: 📤 Upload release assets
+    - name: 📤 Upload Build Artifacts
       if: github.event_name != 'pull_request'
       uses: actions/upload-artifact@v6
       with:
@@ -190,18 +177,18 @@ jobs:
         if-no-files-found: error
 
   draft_release:
-    name: 📝 Draft Release
+    name: 📝 Create Draft Release on Tag
     if: github.ref_type == 'tag'
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Download all release assets
+      - name: 📥 Download all Build Artifacts
         uses: actions/download-artifact@v6
         with:
           path: release-artifacts
           pattern: release-assets-*
 
-      - name: 📝 Generate Draft Release on Tag
+      - name: 📝 Generate Draft Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true

@@ -78,15 +78,12 @@ jobs:
         --output Release-${{ matrix.architecture }}
         --arch ${{ matrix.architecture }}
 
-    - name: 🤖 Azure CLI Federated Token Login
+    - name: 🤖 Azure Login - Federated Token
       if: github.event_name != 'pull_request'
       shell: pwsh
       run: |
         $token = $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN
         $uri = $env:ACTIONS_ID_TOKEN_REQUEST_URL
-        $clientId =
-        $tenantId =
-        $subscriptionId =
         $irmParams = @{
           Uri = $uri
           Authentication = 'Bearer'

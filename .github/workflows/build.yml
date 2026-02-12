@@ -30,6 +30,7 @@ jobs:
       uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Deep fetch is required for GitVersion
+
     - name: 🪳 Debug with VSCode if [debug-vscode] is in commit message
       if: >
         contains(github.event.head_commit.message, '[debug-vscode]')
@@ -46,7 +47,7 @@ jobs:
       uses: actions/cache@v5
       with:
         key: ${{ runner.os }}-gitversion-${{ env.GITVERSIONSPEC }}
-        path: /opt/hostedtoolcache/gitversion
+        path: C:\hostedtoolcache\windows\GitVersion.Tool
     - name: 📥 Install GitVersion
       uses: gittools/actions/gitversion/setup@v4.2.0
       with:

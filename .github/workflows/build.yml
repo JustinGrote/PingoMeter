@@ -18,6 +18,8 @@ jobs:
     name: 👷 Build
     # Windows is required for Wix MSI packaging
     runs-on: windows-2025
+    env:
+      GITVERSIONSPEC: '6.5.1'
     outputs:
       version: ${{ steps.version.outputs.fullSemVer }}
     strategy:
@@ -40,10 +42,15 @@ jobs:
         connection-timeout: 5
         session-timeout: 60
 
+    - name: 💧 Cache GitVersion
+      uses: actions/cache@v5
+      with:
+        key: ${{ runner.os }}-gitversion-${{ env.GITVERSIONSPEC }}
+        path: /opt/hostedtoolcache/gitversion
     - name: 📥 Install GitVersion
       uses: gittools/actions/gitversion/setup@v4.2.0
       with:
-        versionSpec: '6.5.x'
+        versionSpec: ${{env.GITVERSIONSPEC }}
 
     - name: 🧮 Determine Version
       id: version

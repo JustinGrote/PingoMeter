@@ -28,14 +28,14 @@ jobs:
       with:
         fetch-depth: 0 # Deep fetch is required for GitVersion
 
-    - name: Debug with VSCode
-      if: failure() || runner.debug == '1'
-      uses: justingrote/vscode-action@v0.0.2
-      with:
-        #All these settings are optional
-        tunnel-name: 'pingometer'
-        connection-timeout: 5
-        session-timeout: 60
+    # - name: Debug with VSCode
+    #   if: failure() || runner.debug == '1'
+    #   uses: justingrote/vscode-action@v0.0.2
+    #   with:
+    #     #All these settings are optional
+    #     tunnel-name: 'pingometer'
+    #     connection-timeout: 5
+    #     session-timeout: 60
 
     - name: Setup .NET
       uses: JustinGrote/setup-dotnet@feature/enable-install-cache

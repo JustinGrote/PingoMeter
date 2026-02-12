@@ -139,11 +139,12 @@ jobs:
         if-no-files-found: error
 
   draft_release:
+    if: github.ref_type == 'tag'
     needs: build
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.build.outputs.version }}
-    if: github.event_name != 'pull_request'
+
     steps:
       - name: Download all release assets
         uses: actions/download-artifact@v6
@@ -152,7 +153,7 @@ jobs:
           pattern: release-assets-*
 
       - name: Generate Draft Release on Tag
-        if: github.ref_type == 'tag'
+
         uses: softprops/action-gh-release@v2
         with:
           draft: true

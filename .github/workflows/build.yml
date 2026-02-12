@@ -34,8 +34,6 @@ jobs:
     - name: 🪳 Debug with VSCode if [debug-vscode] is in commit message
       if: >
         contains(github.event.head_commit.message, '[debug-vscode]')
-        && matrix.architecture == 'x86'
-        && github.event.pull_request.head.repo.full_name == github.repository
       uses: justingrote/vscode-action@v0.0.2
       with:
         #All these settings are optional
@@ -44,20 +42,32 @@ jobs:
         session-timeout: 60
 
     - name: 💧 Cache GitVersion
+      id: cache-gitversion
       uses: actions/cache@v5
       with:
         key: ${{ runner.os }}-gitversion-${{ env.GITVERSIONSPEC }}
         path: C:\hostedtoolcache\windows\GitVersion.Tool
+
     - name: 📥 Install GitVersion
       uses: gittools/actions/gitversion/setup@v4.2.0
       with:
-        versionSpec: ${{env.GITVERSIONSPEC }}
+        versionSpec: ${{ env.GITVERSIONSPEC }}
 
     - name: 🧮 Determine Version
       id: version
       uses: gittools/actions/gitversion/execute@v4.2.0
 
+    - name: 💧 .NET Restore Cache
+      id: net-restore-cache
+      uses: actions/cache@v5
+      with:
+        key: ${{ runner.os }}-dotnetpackages-${{ hashFiles('**/packages.lock.json') }}
+        path: |
+          artifacts
+          ~/.nuget/packages
+
     - name: 📥 .NET Restore
+      if: steps.net-restore-cache.outputs.cache-hit != 'true'
       run: dotnet restore Source/PingoMeter.csproj
 
     - name: 📦 .NET Publish
@@ -68,25 +78,46 @@ jobs:
         --output Release-${{ matrix.architecture }}
         --arch ${{ matrix.architecture }}
 
-    - name: Azure Login
+    - name: 🤖 Azure CLI Federated Token Login
       if: github.event_name != 'pull_request'
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      shell: pwsh
+      run: |
+        $token = $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN
+        $uri = $env:ACTIONS_ID_TOKEN_REQUEST_URL
+        $clientId =
+        $tenantId =
+        $subscriptionId =
+        $irmParams = @{
+          Uri = $uri
+          Authentication = 'Bearer'
+          Token = (ConvertTo-SecureString -AsPlainText $token)
+          Body = @{audience = 'api://AzureADTokenExchange' }
+        }
+        $jwtResponse = Invoke-Restmethod @irmParams
+        $fedToken = $jwtResponse.value
+        if (-not $fedToken) {
+          throw "Federated token not found in response: $($jwtResponse | ConvertTo-Json -Depth 10)"
+        }
+
+        $azLoginParams = @(
+          '--service-principal',
+          '-u', '${{ secrets.AZURE_CLIENT_ID }}',
+          '-t', '${{ secrets.AZURE_TENANT_ID }}',
+          '--federated-token', $fedToken
+        )
+        & az login @azLoginParams
 
     - name: 🖊️ Sign PingoMeter executable
       if: github.event_name != 'pull_request'
       uses: azure/artifact-signing-action@v1
       with:
+        exclude-azure-cli-credential: false
         exclude-environment-credential: true
         exclude-workload-identity-credential: true
         exclude-managed-identity-credential: true
         exclude-shared-token-cache-credential: true
         exclude-visual-studio-credential: true
         exclude-visual-studio-code-credential: true
-        exclude-azure-cli-credential: false
         exclude-azure-powershell-credential: true
         exclude-azure-developer-cli-credential: true
         exclude-interactive-browser-credential: true

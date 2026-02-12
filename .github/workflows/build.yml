@@ -29,7 +29,7 @@ jobs:
         fetch-depth: 0 # Deep fetch is required for GitVersion
 
     - name: Setup .NET
-      uses: JustinGrote/setup-dotnet@feature/enable-install-cache
+      uses: JustinGrote/setup-dotnet@955ceedf902e6806b889227c7aa08bc30a92bff0
       with:
         cache: true
 

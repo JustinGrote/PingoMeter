@@ -41,14 +41,14 @@ jobs:
         connection-timeout: 5
         session-timeout: 60
 
-    - name: 💧 Cache GitVersion
+    - name: 💧 GitVersion Cache
       id: cache-gitversion
       uses: actions/cache@v5
       with:
         key: ${{ runner.os }}-gitversion-${{ env.GITVERSIONSPEC }}
         path: C:\hostedtoolcache\windows\GitVersion.Tool
 
-    - name: 📥 Install GitVersion
+    - name: 📥 GitVersion Install
       uses: gittools/actions/gitversion/setup@v4.2.0
       with:
         versionSpec: ${{ env.GITVERSIONSPEC }}

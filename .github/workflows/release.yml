@@ -1,4 +1,4 @@
-name: Release Build
+name: 🚀 Publish Release
 
 on:
   release:
@@ -10,12 +10,13 @@ defaults:
 
 jobs:
   publish_chocolatey:
+    name: 🍫 Chocolatey
     environment: Chocolatey
     runs-on: windows-2025
     steps:
-      - name: Checkout code
+      - name: 📤 Checkout
         uses: actions/checkout@v6
-      - name: Push to Chocolatey
+      - name: 📤 Push to Chocolatey
         env:
           GH_TOKEN: ${{ github.token }} # For GH CLI
         run: |

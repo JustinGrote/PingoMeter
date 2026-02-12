@@ -1,4 +1,4 @@
-name: Build PingoMeter
+name: 👷 Build
 
 on:
   push:
@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   build:
+    name: 👷 Build
     # Windows is required for Wix MSI packaging
     runs-on: windows-2025
     outputs:
@@ -23,34 +24,42 @@ jobs:
       matrix:
         architecture: [x86, arm64]
     steps:
-    - name: Checkout code
+    - name: 📤 Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Deep fetch is required for GitVersion
 
-    # - name: Debug with VSCode
-    #   if: failure() || runner.debug == '1'
-    #   uses: justingrote/vscode-action@v0.0.2
-    #   with:
-    #     #All these settings are optional
-    #     tunnel-name: 'pingometer'
-    #     connection-timeout: 5
-    #     session-timeout: 60
+    - name: 🪳 Debug with VSCode if [debug-vscode] is in commit message
+      if: |-
+        contains(github.event.head_commit.message, '[debug-vscode]')
+        && matrix.architecture == 'x86'
+        && github.event.pull_request.head.repo.full_name == github.repository
+      uses: justingrote/vscode-action@v0.0.2
+      with:
+        #All these settings are optional
+        tunnel-name: 'pingometer'
+        connection-timeout: 5
+        session-timeout: 60
 
-    - name: Install GitVersion
+    - name: 📥 Install GitVersion
       uses: gittools/actions/gitversion/setup@v4.2.0
       with:
         versionSpec: '6.5.x'
 
-    - name: Determine Version
+    - name: 🧮 Determine Version
       id: version
       uses: gittools/actions/gitversion/execute@v4.2.0
 
-    - name: Restore dependencies
+    - name: 📥 .NET Restore
       run: dotnet restore Source/PingoMeter.csproj
 
-    - name: Publish project
-      run: dotnet publish Source/PingoMeter.csproj --configuration Release /p:DebugType=None /p:DebugSymbols=false --output Release-${{ matrix.architecture }} --arch ${{ matrix.architecture }}
+    - name: 📦 .NET Publish
+      run: |-
+        dotnet publish Source/PingoMeter.csproj
+        /p:DebugType=None /p:DebugSymbols=false
+        --configuration Release
+        --output Release-${{ matrix.architecture }}
+        --arch ${{ matrix.architecture }}
 
     - name: Azure Login
       if: github.event_name != 'pull_request'
@@ -60,7 +69,7 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Sign PingoMeter executable
+    - name: 🖊️ Sign PingoMeter executable
       if: github.event_name != 'pull_request'
       uses: azure/artifact-signing-action@v1
       with:
@@ -83,10 +92,15 @@ jobs:
         files-folder: ${{ github.workspace }}\Release-${{ matrix.architecture }}
         files-folder-filter: exe
 
-    - name: Build MSI Installer
-      run: dotnet build Installer/PingoMeter.Installer.wixproj --configuration Release /p:Architecture=${{ matrix.architecture }} /p:SourceDir=$pwd\Release-${{ matrix.architecture }} /p:Version=${{ steps.version.outputs.fullSemVer }}
+    - name: 📦 MSI Installer
+      run: |-
+        dotnet build Installer/PingoMeter.Installer.wixproj
+        --configuration Release
+        /p:Architecture=${{ matrix.architecture }}
+        /p:SourceDir=$pwd\Release-${{ matrix.architecture }}
+        /p:Version=${{ steps.version.outputs.fullSemVer }}
 
-    - name: Sign PingoMeter MSI Installer
+    - name: 🖊️ Sign PingoMeter MSI Installer
       if: github.event_name != 'pull_request'
       uses: azure/artifact-signing-action@v1
       with:
@@ -109,21 +123,21 @@ jobs:
         files-folder: ${{ github.workspace }}\Installer\bin\Release
         files-folder-filter: "*.msi"
 
-    - name: Upload Release artifact
+    - name: 📤 Upload Release artifact
       uses: actions/upload-artifact@v6
       with:
         name: PingoMeter-${{ matrix.architecture }}
         path: Release-${{ matrix.architecture }}/
         if-no-files-found: error
 
-    - name: Upload MSI Installer
+    - name: 📤 Upload MSI Installer
       uses: actions/upload-artifact@v6
       with:
         name: PingoMeter-Installer-${{ matrix.architecture }}
         path: Installer/bin/Release/*.msi
         if-no-files-found: error
 
-    - name: Prepare release assets
+    - name: 📦 Prepare release assets
       if: github.event_name != 'pull_request'
       run: |
         New-Item -ItemType Directory -Force -Path ReleaseAssets | Out-Null
@@ -132,7 +146,7 @@ jobs:
         Compress-Archive -Path "Release-${{ matrix.architecture }}\*" -DestinationPath "ReleaseAssets\$zipName"
         Get-ChildItem -Path "Installer/bin/Release/*.msi" | Copy-Item -Destination "ReleaseAssets\$msiName"
 
-    - name: Upload release assets
+    - name: 📤 Upload release assets
       if: github.event_name != 'pull_request'
       uses: actions/upload-artifact@v6
       with:
@@ -141,17 +155,18 @@ jobs:
         if-no-files-found: error
 
   draft_release:
+    name: 📝 Draft Release
     if: github.ref_type == 'tag'
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download all release assets
+      - name: 📥 Download all release assets
         uses: actions/download-artifact@v6
         with:
           path: release-artifacts
           pattern: release-assets-*
 
-      - name: Generate Draft Release on Tag
+      - name: 📝 Generate Draft Release on Tag
         uses: softprops/action-gh-release@v2
         with:
           draft: true

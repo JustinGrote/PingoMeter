@@ -37,11 +37,6 @@ jobs:
     #     connection-timeout: 5
     #     session-timeout: 60
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        cache: true
-
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v4.2.0
       with:
@@ -64,7 +59,6 @@ jobs:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        enable-AzPSSession: true
 
     - name: Sign PingoMeter executable
       if: github.event_name != 'pull_request'

@@ -33,7 +33,7 @@ jobs:
       uses: justingrote/vscode-action
       with:
         #All these settings are optional
-        tunnel-name: 'my-tunnel'
+        tunnel-name: 'pingometer'
         connection-timeout: 5
         session-timeout: 60
 

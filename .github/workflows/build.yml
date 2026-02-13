@@ -205,3 +205,4 @@ jobs:
           generate_release_notes: true
           tag_name: ${{ github.ref_name }}
           files: release-artifacts/**
+          fail_on_unmatched_files: true

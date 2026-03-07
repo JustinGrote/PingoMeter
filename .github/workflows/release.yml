@@ -57,3 +57,35 @@ jobs:
           & choco pack
           & choco push --source https://push.chocolatey.org/
           Pop-Location
+  publish_winget:
+    name: 🪟 WinGet
+    environment: Winget
+    runs-on: windows-2025
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: 🚚 Push to Winget
+        run: |
+          $tagName = '${{ github.event.release.tag_name }}'
+          $version = $tagName.TrimStart('v')
+          Write-Host "Push to Winget with Release tag: $tagName, Version: $version"
+
+          $msiAsset = gh release view $tagName --json assets
+          | ConvertFrom-Json
+          | Foreach-Object assets
+          | Where-Object { $_.name -like "PingoMeter-*-x86.msi" }
+
+          if (!$msiAsset) {
+            Write-Error "Pingometer x86 msi asset not found for release $tagName. Does the release exist?"
+            exit 1
+          }
+
+          $msiAssetUri = $msiAsset.url
+          "Found MSI asset URI: $msiAssetUri"
+
+          #Fetch WinGetCreate
+          "Fetching latest wingetcreate"
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          "Publishing to Winget version $version with MSI asset URI: $msiAssetUri"
+          .\wingetcreate.exe update "Pingometer.Pingometer" --version $version --url $msiAssetUri --submit --token '${{ github.token }}'

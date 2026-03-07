@@ -66,6 +66,7 @@ jobs:
           & choco pack
           & choco push --source https://push.chocolatey.org/
           Pop-Location
+
   publish_winget:
     name: 🪟 WinGet
     environment: Winget
@@ -75,6 +76,8 @@ jobs:
       contents: read
     steps:
       - name: 🚚 Push to Winget
+        env:
+          GH_TOKEN: ${{ github.token }} # For GH CLI
         run: |
           $tagName = $env:TAG
           $version = $tagName.TrimStart('v')

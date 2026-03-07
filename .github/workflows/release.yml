@@ -103,4 +103,4 @@ jobs:
           "Fetching latest wingetcreate"
           Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
           "Publishing to Winget version $version with MSI asset URI: $msiAssetUri"
-          .\wingetcreate.exe update "Pingometer.Pingometer" --version $version --url $msiAssetUri --submit --token '${{ github.token }}'
+          .\wingetcreate.exe update "Pingometer.Pingometer" --version $version --urls $msiAssetUri --submit

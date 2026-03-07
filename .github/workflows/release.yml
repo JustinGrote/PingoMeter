@@ -75,6 +75,8 @@ jobs:
       pull-requests: write
       contents: read
     steps:
+      - name: 📤 Checkout
+        uses: actions/checkout@v6
       - name: 🚚 Push to Winget
         env:
           GH_TOKEN: ${{ github.token }} # For GH CLI

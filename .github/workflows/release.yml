@@ -101,11 +101,11 @@ jobs:
             exit 1
           }
 
-          $msiAssetUri = $msiAssets.url -join ','
+          $msiAssetUri = $msiAssets.url -join ' '
           "Found MSI asset URI: $msiAssetUri"
 
           #Fetch WinGetCreate
           "Fetching latest wingetcreate"
           Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
           "Publishing to Winget version $version with MSI asset URI: $msiAssetUri"
-          .\wingetcreate.exe update $env:WINGET_PACKAGE_NAME --version $version --urls $msiAssetUri --submit
+          .\wingetcreate.exe update $env:WINGET_PACKAGE_NAME --version $version --submit --urls $msiAssetUri

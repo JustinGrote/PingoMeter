@@ -8,3 +8,22 @@ PingoMeter - is a small program that show your ping in Windows system tray (in g
 
 Double clicking the Icon or right-clicking the icon brings up an [WinMTR](https://winmtr.net/) style traceroute.
 ![TraceRoute](images/README/image.png)
+
+# Installation
+## Chocolatey
+
+```powershell
+choco install pingometer
+```
+
+## Winget
+
+```powershell
+winget install JustinGrote.PingoMeter
+```
+
+## Scoop
+
+```powershell
+scoop install https://raw.githubusercontent.com/JustinGrote/PingoMeter/refs/heads/main/Installer/Scoop/pingometer.json
+```

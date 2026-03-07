@@ -1,0 +1,36 @@
+{
+	"$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/refs/heads/master/schema.json",
+	"version": "1.1.0",
+	"description": "A small portable program that show your ping in Windows system tray.",
+	"homepage": "https://github.com/JustinGrote/PingoMeter",
+	"license": "MIT",
+	"architecture": {
+		"32bit": {
+			"url": "https://github.com/JustinGrote/PingoMeter/releases/download/v1.1.0/PingoMeter-1.1.0-x86.zip",
+			"hash": "451dd1c2e8bd7db123cb24d8ba9eb624a61acd4599255982b8d68a4769840471"
+		},
+		"arm64": {
+			"url": "https://github.com/JustinGrote/PingoMeter/releases/download/v1.1.0/PingoMeter-1.1.0-arm64.zip",
+			"hash": "245015542477ef5e3ac8869b8adc8076573aff647191129300e41b2ad9f41cd2"
+		}
+	},
+	"extract_dir": "PingoMeter",
+	"bin": "PingoMeter.exe",
+	"shortcuts": [
+		[
+			"PingoMeter.exe",
+			"PingoMeter"
+		]
+	],
+	"checkver": "github",
+	"autoupdate": {
+		"architecture": {
+			"32bit": {
+				"url": "https://github.com/JustinGrote/PingoMeter/releases/download/$version/PingoMeter-$version-x86.zip"
+			},
+			"arm64": {
+				"url": "https://github.com/JustinGrote/PingoMeter/releases/download/$version/PingoMeter-$version-arm64.zip"
+			}
+		}
+	}
+}

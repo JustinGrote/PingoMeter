@@ -1,8 +1,17 @@
 name: 🚀 Publish Release
 
+#Optimized for immutable releases: https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases
+
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'USE ONLY ON PUBLISH FAILURE AFTER FIXING PROBLEM. Release tag to re-publish (e.g. v1.2.3)'
+        required: true
+env:
+  TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
 
 defaults:
   run:
@@ -20,7 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }} # For GH CLI
         run: |
-          $tagName = '${{ github.event.release.tag_name }}'
+          $tagName = $env:TAG
           $version = $tagName.TrimStart('v')
           Write-Host "Push to Chocolatey with Release tag: $tagName, Version: $version"
 
@@ -67,7 +76,7 @@ jobs:
     steps:
       - name: 🚚 Push to Winget
         run: |
-          $tagName = '${{ github.event.release.tag_name }}'
+          $tagName = $env:TAG
           $version = $tagName.TrimStart('v')
           Write-Host "Push to Winget with Release tag: $tagName, Version: $version"
 

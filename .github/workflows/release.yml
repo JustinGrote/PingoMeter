@@ -80,6 +80,7 @@ jobs:
       - name: 🚚 Push to Winget
         env:
           GH_TOKEN: ${{ github.token }} # For GH CLI
+          WINGET_CREATE_GITHUB_TOKEN: ${{ github.token }} # For WingetCreate
         run: |
           $tagName = $env:TAG
           $version = $tagName.TrimStart('v')

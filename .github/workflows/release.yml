@@ -20,7 +20,9 @@ defaults:
 jobs:
   publish_chocolatey:
     name: 🍫 Chocolatey
-    environment: Chocolatey
+    environment:
+      name: Chocolatey
+      url: https://community.chocolatey.org/packages/pingometer
     runs-on: windows-2025
     steps:
       - name: 📤 Checkout
@@ -69,7 +71,9 @@ jobs:
 
   publish_winget:
     name: 🪟 WinGet
-    environment: Winget
+    environment:
+      name: Winget
+      url: https://github.com/microsoft/winget-pkgs/tree/master/manifests/j/JustinGrote/PingoMeter
     runs-on: windows-2025
     permissions:
       pull-requests: write
@@ -81,6 +85,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }} # For GH CLI
           WINGET_CREATE_GITHUB_TOKEN: ${{ github.token }} # For WingetCreate
+          WINGET_PACKAGE_NAME: "JustinGrote.PingoMeter"
         run: |
           $tagName = $env:TAG
           $version = $tagName.TrimStart('v')
@@ -103,4 +108,4 @@ jobs:
           "Fetching latest wingetcreate"
           Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
           "Publishing to Winget version $version with MSI asset URI: $msiAssetUri"
-          .\wingetcreate.exe update "Pingometer.Pingometer" --version $version --urls $msiAssetUri --submit
+          .\wingetcreate.exe update $env:WINGET_PACKAGE_NAME --version $version --urls $msiAssetUri --submit

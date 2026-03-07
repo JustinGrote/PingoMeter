@@ -91,17 +91,17 @@ jobs:
           $version = $tagName.TrimStart('v')
           Write-Host "Push to Winget with Release tag: $tagName, Version: $version"
 
-          $msiAsset = gh release view $tagName --json assets
+          $msiAssets = gh release view $tagName --json assets
           | ConvertFrom-Json
           | Foreach-Object assets
-          | Where-Object { $_.name -like "PingoMeter-*-x86.msi" }
+          | Where-Object { $_.name -like "PingoMeter-*.msi" }
 
-          if (!$msiAsset) {
-            Write-Error "Pingometer x86 msi asset not found for release $tagName. Does the release exist?"
+          if ($msiAssets.Count -ne 2) {
+            Write-Error "Expected exactly 2 MSI assets (x86 and arm64) for release $tagName, but found: $($msiAssets.url)"
             exit 1
           }
 
-          $msiAssetUri = $msiAsset.url
+          $msiAssetUri = $msiAssets.url -join ','
           "Found MSI asset URI: $msiAssetUri"
 
           #Fetch WinGetCreate

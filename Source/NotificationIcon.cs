@@ -28,6 +28,7 @@ namespace PingoMeter
         SoundPlayer SFXResumed;
 
         System.Threading.Timer? pingTimer;
+        int pingInProgress = 0;
 
         enum PingHealthEnum
         {
@@ -89,6 +90,9 @@ namespace PingoMeter
             // Start the ping timer - use synchronous callback with fire-and-forget Task.Run
             pingTimer = new System.Threading.Timer(_ =>
             {
+                if (Interlocked.Exchange(ref pingInProgress, 1) == 1)
+                    return;
+
                 // Fire and forget - don't wait for the task to complete
                 _ = Task.Run(async () =>
                 {
@@ -108,6 +112,10 @@ namespace PingoMeter
                         {
                             // Ignore if notification icon is disposed
                         }
+                    }
+                    finally
+                    {
+                        Volatile.Write(ref pingInProgress, 0);
                     }
                 });
             }, null,

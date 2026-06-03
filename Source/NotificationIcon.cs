@@ -1,4 +1,5 @@
 ﻿using PingoMeter.vendor.StartupCreator;
+using System.Diagnostics;
 using System.Media;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
@@ -28,6 +29,11 @@ namespace PingoMeter
         SoundPlayer SFXResumed;
 
         System.Threading.Timer? pingTimer;
+        readonly object shutdownLock = new();
+        readonly ManualResetEventSlim activePingsDrained = new(true);
+        int activePingTasks;
+        bool isShuttingDown;
+        bool isDisposed;
 
         enum PingHealthEnum
         {
@@ -89,6 +95,15 @@ namespace PingoMeter
             // Start the ping timer - use synchronous callback with fire-and-forget Task.Run
             pingTimer = new System.Threading.Timer(_ =>
             {
+                lock (shutdownLock)
+                {
+                    if (isShuttingDown)
+                        return;
+
+                    activePingTasks++;
+                    activePingsDrained.Reset();
+                }
+
                 // Fire and forget - don't wait for the task to complete
                 _ = Task.Run(async () =>
                 {
@@ -109,6 +124,15 @@ namespace PingoMeter
                             // Ignore if notification icon is disposed
                         }
                     }
+                    finally
+                    {
+                        lock (shutdownLock)
+                        {
+                            activePingTasks--;
+                            if (activePingTasks == 0)
+                                activePingsDrained.Set();
+                        }
+                    }
                 });
             }, null,
                 TimeSpan.FromMilliseconds(999),
@@ -119,6 +143,14 @@ namespace PingoMeter
 
         public void Dispose()
         {
+            lock (shutdownLock)
+            {
+                if (isDisposed)
+                    return;
+
+                isDisposed = true;
+            }
+
             pingTimer?.Dispose();
 
             if (hicon != IntPtr.Zero)
@@ -456,7 +488,40 @@ namespace PingoMeter
 
         private void MenuExitClick(object? sender, EventArgs e)
         {
+            BeginShutdown();
+        }
+
+        private void BeginShutdown()
+        {
+            lock (shutdownLock)
+            {
+                if (isShuttingDown)
+                    return;
+
+                isShuttingDown = true;
+            }
+
             notifyIcon.Visible = false;
+
+            pingTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            pingTimer?.Dispose();
+            pingTimer = null;
+
+            using var forceQuitTimer = new System.Threading.Timer(_ =>
+            {
+                try
+                {
+                    Process.GetCurrentProcess().Kill();
+                }
+                catch
+                {
+                    Environment.FailFast("PingoMeter shutdown timed out.");
+                }
+            }, null, TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan);
+
+            activePingsDrained.Wait(TimeSpan.FromSeconds(5));
+
+            Dispose();
             Application.Exit();
         }
 
